@@ -1,11 +1,12 @@
 import * as React from "react";
 import { createRoot } from "react-dom/client";
 import App from "./components/App";
-import { FluentProvider, webLightTheme } from "@fluentui/react-components";
+import { FluentProvider } from "@fluentui/react-components";
+import { minimalLightTheme } from "../theme/minimalTheme";
 
 /* global document, Office, module, require, HTMLElement */
 
-const title = "Word Claude Editor";
+const title = "DNAgent";
 
 // Add error handling for debugging
 window.onerror = function(msg, url, lineNo, columnNo, error) {
@@ -58,7 +59,7 @@ if (!rootElement) {
       
       try {
         root.render(
-          <FluentProvider theme={webLightTheme}>
+          <FluentProvider theme={minimalLightTheme}>
             <App title={title} />
           </FluentProvider>
         );
@@ -97,7 +98,7 @@ if (!rootElement) {
     (module as any).hot.accept("./components/App", () => {
       const NextApp = require("./components/App").default;
       root.render(
-        <FluentProvider theme={webLightTheme}>
+        <FluentProvider theme={minimalLightTheme}>
           <NextApp title={title} />
         </FluentProvider>
       );

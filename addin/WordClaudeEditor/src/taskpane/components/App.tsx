@@ -3,12 +3,16 @@ import { useState } from "react";
 import {
   makeStyles,
   tokens,
-  Tab,
-  TabList,
-  Button,
   Text,
+  Button,
+  Tooltip,
 } from "@fluentui/react-components";
-import { EditRegular, SettingsRegular } from "@fluentui/react-icons";
+import { 
+  DocumentSearchRegular,
+  EditRegular,
+  SparkleRegular,
+  SettingsRegular
+} from "@fluentui/react-icons";
 import Header from "./Header";
 import EditorTab from "./EditorTab";
 import ConfigTab from "./ConfigTab";
@@ -22,43 +26,100 @@ const useStyles = makeStyles({
     minHeight: "100vh",
     display: "flex",
     flexDirection: "column",
+    backgroundColor: "#ffffff",
+  },
+  navigation: {
+    display: "flex",
+    alignItems: "center",
+    borderBottom: `1px solid ${tokens.colorNeutralStroke1}`,
+    padding: "0 12px",
+    height: "40px",
+    backgroundColor: "#fafafa",
+  },
+  navButton: {
+    minWidth: "36px",
+    height: "32px",
+    padding: "0 8px",
+    marginRight: "4px",
+    border: "none",
+    backgroundColor: "transparent",
+    color: tokens.colorNeutralForeground3,
+    fontSize: "20px",
+    cursor: "pointer",
+    borderRadius: tokens.borderRadiusSmall,
+    "&:hover": {
+      backgroundColor: tokens.colorNeutralBackground3,
+      color: tokens.colorNeutralForeground1,
+    },
+  },
+  navButtonActive: {
     backgroundColor: tokens.colorNeutralBackground1,
+    color: tokens.colorNeutralForeground1,
+    boxShadow: "0 0 0 1px " + tokens.colorNeutralStroke2,
+  },
+  navDivider: {
+    width: "1px",
+    height: "20px",
+    backgroundColor: tokens.colorNeutralStroke1,
+    margin: "0 8px",
   },
   content: {
     flex: 1,
-    padding: "20px",
     overflowY: "auto",
-  },
-  tabContent: {
-    marginTop: "20px",
+    backgroundColor: "#ffffff",
   },
 });
 
-const App: React.FC<AppProps> = (props: AppProps) => {
+const App: React.FC<AppProps> = () => {
   const styles = useStyles();
-  const [selectedTab, setSelectedTab] = useState<string>("editor");
+  const [selectedMode, setSelectedMode] = useState<string>("edit");
+
+  const modes = [
+    { id: "review", icon: <DocumentSearchRegular />, label: "Review", disabled: true },
+    { id: "edit", icon: <EditRegular />, label: "Edit Selection", disabled: false },
+    { id: "agent", icon: <SparkleRegular />, label: "Agent", disabled: true },
+  ];
 
   return (
     <div className={styles.root}>
-      <Header logo="assets/logo-filled.png" title={props.title} message="AI Writing Assistant" />
+      <Header />
       
-      <TabList
-        selectedValue={selectedTab}
-        onTabSelect={(_, data) => setSelectedTab(data.value as string)}
-      >
-        <Tab value="editor" icon={<EditRegular />}>
-          Editor
-        </Tab>
-        <Tab value="config" icon={<SettingsRegular />}>
-          Config
-        </Tab>
-      </TabList>
+      <div className={styles.navigation}>
+        {modes.map((mode) => (
+          <Tooltip 
+            key={mode.id} 
+            content={mode.disabled ? `${mode.label} (Coming soon)` : mode.label} 
+            relationship="description"
+          >
+            <button
+              className={`${styles.navButton} ${selectedMode === mode.id ? styles.navButtonActive : ""}`}
+              onClick={() => !mode.disabled && setSelectedMode(mode.id)}
+              disabled={mode.disabled}
+              style={{ 
+                opacity: mode.disabled ? 0.4 : 1,
+                cursor: mode.disabled ? "not-allowed" : "pointer"
+              }}
+            >
+              {mode.icon}
+            </button>
+          </Tooltip>
+        ))}
+        
+        <div className={styles.navDivider} />
+        
+        <Tooltip content="Settings" relationship="description">
+          <button
+            className={`${styles.navButton} ${selectedMode === "config" ? styles.navButtonActive : ""}`}
+            onClick={() => setSelectedMode("config")}
+          >
+            <SettingsRegular />
+          </button>
+        </Tooltip>
+      </div>
 
       <div className={styles.content}>
-        <div className={styles.tabContent}>
-          {selectedTab === "editor" && <EditorTab />}
-          {selectedTab === "config" && <ConfigTab />}
-        </div>
+        {selectedMode === "edit" && <EditorTab />}
+        {selectedMode === "config" && <ConfigTab />}
       </div>
     </div>
   );

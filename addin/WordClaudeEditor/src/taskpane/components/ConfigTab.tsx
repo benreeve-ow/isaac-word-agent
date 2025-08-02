@@ -8,204 +8,282 @@ import {
   Textarea,
   Field,
   Switch,
-  MessageBar,
-  MessageBarBody,
-  MessageBarTitle,
+  Divider,
 } from "@fluentui/react-components";
-import { SaveRegular, SettingsRegular } from "@fluentui/react-icons";
+import {
+  SaveRegular,
+  ArrowResetRegular,
+} from "@fluentui/react-icons";
 
 const useStyles = makeStyles({
   container: {
     display: "flex",
     flexDirection: "column",
-    gap: "20px",
+    height: "100%",
+    backgroundColor: "#ffffff",
   },
   section: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "12px",
-    padding: "16px",
-    backgroundColor: tokens.colorNeutralBackground2,
-    borderRadius: tokens.borderRadiusMedium,
+    padding: "12px",
+    borderBottom: `1px solid ${tokens.colorNeutralStroke1}`,
+  },
+  sectionTitle: {
+    fontSize: "13px",
+    fontWeight: "600",
+    marginBottom: "8px",
+    color: tokens.colorNeutralForeground1,
+  },
+  promptTextarea: {
+    "& textarea": {
+      fontSize: "12px",
+      fontFamily: tokens.fontFamilyMonospace,
+      lineHeight: "1.4",
+    },
   },
   buttonContainer: {
     display: "flex",
-    gap: "12px",
-    justifyContent: "flex-start",
+    gap: "8px",
     marginTop: "12px",
   },
-  formField: {
-    marginBottom: "16px",
+  button: {
+    fontSize: "12px",
+    height: "32px",
+    paddingLeft: "12px",
+    paddingRight: "12px",
+  },
+  primaryButton: {
+    backgroundColor: "#1a1a1a",
+    color: "#ffffff",
+    "&:hover": {
+      backgroundColor: "#2d2d2d",
+    },
+  },
+  toolsGrid: {
+    display: "grid",
+    gridTemplateColumns: "1fr",
+    gap: "8px",
+    marginTop: "8px",
+  },
+  toolRow: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: "8px",
+    backgroundColor: "#fafafa",
+    borderRadius: "4px",
+    border: `1px solid ${tokens.colorNeutralStroke1}`,
+  },
+  toolInfo: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "2px",
+  },
+  toolName: {
+    fontSize: "12px",
+    fontWeight: "500",
+    color: tokens.colorNeutralForeground1,
+  },
+  toolDescription: {
+    fontSize: "11px",
+    color: tokens.colorNeutralForeground3,
+  },
+  statusText: {
+    fontSize: "11px",
+    padding: "8px 12px",
+    backgroundColor: "#f0f9ff",
+    color: "#0969da",
+    borderRadius: "4px",
+    marginTop: "8px",
+  },
+  errorText: {
+    fontSize: "11px",
+    padding: "8px 12px",
+    backgroundColor: "#fff5f5",
+    color: "#d73a49",
+    borderRadius: "4px",
+    marginTop: "8px",
   },
 });
 
-interface Config {
-  systemPrompt: string;
-  enableStyleMatching: boolean;
-  backendUrl: string;
-}
-
-const defaultConfig: Config = {
-  systemPrompt: "You are a professional writing assistant helping to improve text in Microsoft Word documents. Focus on clarity, conciseness, and maintaining the author's voice.",
-  enableStyleMatching: true,
-  backendUrl: "http://localhost:3000",
-};
-
 const ConfigTab: React.FC = () => {
   const styles = useStyles();
-  const [config, setConfig] = useState<Config>(defaultConfig);
+  const [systemPrompt, setSystemPrompt] = useState<string>("");
   const [isSaving, setIsSaving] = useState(false);
-  const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const [saveStatus, setSaveStatus] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const defaultPrompt = "You are a professional writing assistant helping to improve text in Microsoft Word documents. Focus on clarity, conciseness, and maintaining the author's voice.";
 
   useEffect(() => {
-    loadConfig();
+    loadSettings();
   }, []);
 
-  const loadConfig = async () => {
+  const loadSettings = async () => {
     try {
-      // Check if Office context is available
       if (typeof Office !== 'undefined' && Office.context && Office.context.document) {
-        // Load configuration from Office settings
         const settings = Office.context.document.settings;
-        
-        setConfig({
-          systemPrompt: settings.get("claudeSystemPrompt") || defaultConfig.systemPrompt,
-          enableStyleMatching: settings.get("claudeEnableStyleMatching") === "true" || defaultConfig.enableStyleMatching,
-          backendUrl: settings.get("claudeBackendUrl") || defaultConfig.backendUrl,
-        });
+        const prompt = settings.get("claudeSystemPrompt");
+        if (prompt) {
+          setSystemPrompt(prompt);
+        } else {
+          setSystemPrompt(defaultPrompt);
+        }
       } else {
-        // Use default config if Office context not available
-        console.log("Office context not available, using default configuration");
-        setConfig(defaultConfig);
+        setSystemPrompt(defaultPrompt);
       }
-    } catch (error) {
-      // Use default config if loading fails
-      console.log("Using default configuration due to error:", error);
-      setConfig(defaultConfig);
+    } catch (err) {
+      console.error("Error loading settings:", err);
+      setSystemPrompt(defaultPrompt);
     }
   };
 
-  const saveConfig = async () => {
-    try {
-      setIsSaving(true);
-      setSaveMessage(null);
+  const handleSaveConfiguration = async () => {
+    setIsSaving(true);
+    setSaveStatus(null);
+    setError(null);
 
-      // Check if Office context is available
+    try {
       if (typeof Office !== 'undefined' && Office.context && Office.context.document) {
-        // Save configuration to Office settings
         const settings = Office.context.document.settings;
+        settings.set("claudeSystemPrompt", systemPrompt);
         
-        settings.set("claudeSystemPrompt", config.systemPrompt);
-        settings.set("claudeEnableStyleMatching", config.enableStyleMatching.toString());
-        settings.set("claudeBackendUrl", config.backendUrl);
+        await new Promise<void>((resolve, reject) => {
+          settings.saveAsync((result) => {
+            if (result.status === Office.AsyncResultStatus.Succeeded) {
+              resolve();
+            } else {
+              reject(new Error("Failed to save settings"));
+            }
+          });
+        });
         
-        await settings.saveAsync();
-        
-        setSaveMessage("Configuration saved successfully!");
+        setSaveStatus("Configuration saved successfully");
       } else {
-        // Can't save without Office context
-        setSaveMessage("Configuration saved locally (Office context not available)");
+        // Fallback to localStorage for testing
+        localStorage.setItem("claudeSystemPrompt", systemPrompt);
+        setSaveStatus("Configuration saved (test mode)");
       }
-    } catch (error) {
-      setSaveMessage("Failed to save configuration. Please try again.");
+    } catch (err) {
+      console.error("Error saving configuration:", err);
+      setError("Failed to save configuration");
     } finally {
       setIsSaving(false);
     }
   };
 
-  const resetToDefaults = () => {
-    setConfig(defaultConfig);
-    setSaveMessage(null);
+  const handleResetToDefault = () => {
+    setSystemPrompt(defaultPrompt);
+    setSaveStatus("Reset to default prompt");
   };
+
+  const tools = [
+    {
+      name: "Web Search",
+      description: "Search the web for information",
+      enabled: false,
+      comingSoon: true,
+    },
+    {
+      name: "File Search",
+      description: "Search and read local files",
+      enabled: false,
+      comingSoon: true,
+    },
+    {
+      name: "MCP Connectors",
+      description: "Connect to external data sources",
+      enabled: false,
+      comingSoon: true,
+    },
+    {
+      name: "Research Agent",
+      description: "Deep research with multiple sources",
+      enabled: false,
+      comingSoon: true,
+    },
+  ];
 
   return (
     <div className={styles.container}>
       <div className={styles.section}>
-        <Text size={500} weight="semibold">
-          AI Configuration
-        </Text>
-        
-        <Field label="System Prompt" className={styles.formField}>
+        <Text className={styles.sectionTitle}>System Prompt</Text>
+        <Field size="small">
           <Textarea
-            placeholder="Enter custom instructions for Claude..."
-            value={config.systemPrompt}
-            onChange={(_, data) => setConfig({ ...config, systemPrompt: data.value })}
-            rows={4}
-            resize="vertical"
+            className={styles.promptTextarea}
+            value={systemPrompt}
+            onChange={(_, data) => setSystemPrompt(data.value)}
+            placeholder="Enter system prompt..."
+            rows={6}
+            disabled={isSaving}
           />
         </Field>
-
-        <Field label="Style Matching" className={styles.formField}>
-          <Switch
-            checked={config.enableStyleMatching}
-            onChange={(_, data) => setConfig({ ...config, enableStyleMatching: data.checked })}
-            label={config.enableStyleMatching ? "Enabled" : "Disabled"}
-          />
-          <Text size={200} block style={{ marginTop: "4px", color: tokens.colorNeutralForeground2 }}>
-            Automatically analyze and match your document's writing style
-          </Text>
-        </Field>
-
+        
         <div className={styles.buttonContainer}>
           <Button
-            appearance="primary"
+            className={`${styles.button} ${styles.primaryButton}`}
             icon={<SaveRegular />}
-            onClick={saveConfig}
+            onClick={handleSaveConfiguration}
             disabled={isSaving}
+            appearance="primary"
           >
             {isSaving ? "Saving..." : "Save Configuration"}
           </Button>
           
           <Button
+            className={styles.button}
+            icon={<ArrowResetRegular />}
+            onClick={handleResetToDefault}
             appearance="secondary"
-            onClick={resetToDefaults}
             disabled={isSaving}
           >
-            Reset to Defaults
+            Reset to Default
           </Button>
         </div>
 
-        {saveMessage && (
-          <MessageBar intent={saveMessage.includes("Failed") ? "error" : "success"}>
-            <MessageBarBody>
-              <MessageBarTitle>
-                {saveMessage.includes("Failed") ? "Error" : "Success"}
-              </MessageBarTitle>
-              {saveMessage}
-            </MessageBarBody>
-          </MessageBar>
+        {saveStatus && (
+          <div className={styles.statusText}>
+            {saveStatus}
+          </div>
+        )}
+        
+        {error && (
+          <div className={styles.errorText}>
+            {error}
+          </div>
         )}
       </div>
 
       <div className={styles.section}>
-        <Text size={500} weight="semibold">
-          Backend Configuration
-        </Text>
-        
-        <Field label="Backend Server URL" className={styles.formField}>
-          <Textarea
-            placeholder="http://localhost:3000"
-            value={config.backendUrl}
-            onChange={(_, data) => setConfig({ ...config, backendUrl: data.value })}
-            rows={1}
-          />
-          <Text size={200} block style={{ marginTop: "4px", color: tokens.colorNeutralForeground2 }}>
-            URL of the Claude backend server
-          </Text>
-        </Field>
-      </div>
-
-      <div className={styles.section}>
-        <Text size={400} weight="semibold">
-          About this Add-in
-        </Text>
-        <Text size={300}>
-          Word Claude Editor integrates Claude AI to help improve your writing with intelligent suggestions, 
-          style matching, and automated comment implementation.
-        </Text>
-        <Text size={300} style={{ marginTop: "8px" }}>
-          Configuration is saved per document and will persist when you reopen the file.
-        </Text>
+        <Text className={styles.sectionTitle}>Available Tools</Text>
+        <div className={styles.toolsGrid}>
+          {tools.map((tool) => (
+            <div key={tool.name} className={styles.toolRow}>
+              <div className={styles.toolInfo}>
+                <Text className={styles.toolName}>
+                  {tool.name}
+                  {tool.comingSoon && (
+                    <span style={{ 
+                      marginLeft: "6px", 
+                      fontSize: "10px", 
+                      color: tokens.colorNeutralForeground3,
+                      fontWeight: "normal"
+                    }}>
+                      (coming soon)
+                    </span>
+                  )}
+                </Text>
+                <Text className={styles.toolDescription}>
+                  {tool.description}
+                </Text>
+              </div>
+              <Switch
+                checked={tool.enabled}
+                disabled={tool.comingSoon}
+                onChange={() => {}}
+                style={{ opacity: tool.comingSoon ? 0.4 : 1 }}
+              />
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
