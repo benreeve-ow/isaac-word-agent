@@ -5,7 +5,7 @@ const { estimateTokens } = require('../utils/tokenCounter');
 
 router.post('/improve', async (req, res) => {
   try {
-    const { text, contextBefore, contextAfter, systemPrompt, stylePrompt } = req.body;
+    const { text, contextBefore, contextAfter, systemPrompt, stylePrompt, userPrompt } = req.body;
     
     if (!text) {
       return res.status(400).json({ 
@@ -18,7 +18,8 @@ router.post('/improve', async (req, res) => {
       (contextBefore || '') + 
       (contextAfter || '') + 
       (systemPrompt || '') + 
-      (stylePrompt || '')
+      (stylePrompt || '') +
+      (userPrompt || '')
     );
 
     if (totalTokens > 150000) {
@@ -34,7 +35,8 @@ router.post('/improve', async (req, res) => {
       contextBefore,
       contextAfter,
       systemPrompt,
-      stylePrompt
+      stylePrompt,
+      userPrompt
     });
 
     res.json(result);

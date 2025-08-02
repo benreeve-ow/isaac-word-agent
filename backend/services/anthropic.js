@@ -11,10 +11,15 @@ class AnthropicService {
     });
   }
 
-  async improveText({ text, contextBefore, contextAfter, systemPrompt, stylePrompt }) {
+  async improveText({ text, contextBefore, contextAfter, systemPrompt, stylePrompt, userPrompt }) {
     try {
       const fullContext = this.buildContext(text, contextBefore, contextAfter);
       const fullSystemPrompt = this.buildSystemPrompt(systemPrompt, stylePrompt);
+      
+      // Build the user instruction based on whether a custom prompt is provided
+      const instruction = userPrompt 
+        ? `User instructions: ${userPrompt}`
+        : "Please improve this text for clarity, grammar, and style.";
       
       const response = await this.client.messages.create({
         model: 'claude-3-5-sonnet-20241022',
@@ -24,17 +29,19 @@ class AnthropicService {
         messages: [
           {
             role: 'user',
-            content: `Please improve the following text. Provide your response in JSON format with two fields:
-1. "improvedText": The improved version of the text
+            content: `${instruction}
+
+Provide your response in JSON format with two fields:
+1. "improvedText": The modified version of the text based on the instructions
 2. "explanation": A brief explanation of the changes made
 
-Context before the text to improve:
+Context before the text:
 ${contextBefore || '[No context before]'}
 
-TEXT TO IMPROVE:
+TEXT TO MODIFY:
 ${text}
 
-Context after the text to improve:
+Context after the text:
 ${contextAfter || '[No context after]'}
 
 Remember to respond only with valid JSON.`
