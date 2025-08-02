@@ -16,6 +16,7 @@ import {
 import Header from "./Header";
 import EditorTab from "./EditorTab";
 import ConfigTab from "./ConfigTab";
+import AgentTab from "./AgentTab";
 
 interface AppProps {
   title: string;
@@ -77,7 +78,7 @@ const App: React.FC<AppProps> = () => {
   const modes = [
     { id: "review", icon: <DocumentSearchRegular />, label: "Review", disabled: true },
     { id: "edit", icon: <EditRegular />, label: "Edit Selection", disabled: false },
-    { id: "agent", icon: <SparkleRegular />, label: "Agent", disabled: true },
+    { id: "agent", icon: <SparkleRegular />, label: "Agent", disabled: false },
   ];
 
   return (
@@ -119,6 +120,7 @@ const App: React.FC<AppProps> = () => {
 
       <div className={styles.content}>
         {selectedMode === "edit" && <EditorTab />}
+        {selectedMode === "agent" && <AgentTab />}
         {selectedMode === "config" && <ConfigTab />}
       </div>
     </div>

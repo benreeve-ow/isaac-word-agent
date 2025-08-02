@@ -22,7 +22,7 @@ class AnthropicService {
         : "Please improve this text for clarity, grammar, and style.";
       
       const response = await this.client.messages.create({
-        model: 'claude-3-5-sonnet-20241022',
+        model: 'claude-sonnet-4-20250514',
         max_tokens: 4000,
         temperature: 0.3,
         system: fullSystemPrompt,
@@ -76,7 +76,7 @@ Remember to respond only with valid JSON.`
   async implementComment({ text, comment, context, systemPrompt }) {
     try {
       const response = await this.client.messages.create({
-        model: 'claude-3-5-sonnet-20241022',
+        model: 'claude-sonnet-4-20250514',
         max_tokens: 4000,
         temperature: 0.3,
         system: systemPrompt || 'You are a helpful writing assistant.',
@@ -127,7 +127,7 @@ Remember to respond only with valid JSON.`
   async analyzeStyle({ sampleText, sampleSize }) {
     try {
       const response = await this.client.messages.create({
-        model: 'claude-3-5-sonnet-20241022',
+        model: 'claude-sonnet-4-20250514',
         max_tokens: 2000,
         temperature: 0.3,
         system: 'You are an expert writing style analyst.',
