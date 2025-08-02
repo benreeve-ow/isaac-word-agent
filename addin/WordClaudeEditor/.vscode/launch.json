@@ -2,25 +2,46 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Word Desktop (Edge Chromium)",
+      "name": "Debug in Browser (Chrome)",
+      "type": "chrome",
+      "request": "launch",
+      "url": "https://localhost:3001/taskpane.html",
+      "webRoot": "${workspaceFolder}/src",
+      "sourceMaps": true,
+      "sourceMapPathOverrides": {
+        "webpack:///./src/*": "${webRoot}/*",
+        "webpack:///./*": "${webRoot}/*",
+        "webpack:///src/*": "${webRoot}/*"
+      },
+      "runtimeArgs": [
+        "--remote-debugging-port=9222",
+        "--disable-web-security"
+      ]
+    },
+    {
+      "name": "Attach to Word (Windows)",
       "type": "msedge",
       "request": "attach",
       "port": 9229,
       "timeout": 600000,
-      "webRoot": "${workspaceRoot}",
+      "webRoot": "${workspaceFolder}",
+      "sourceMaps": true,
+      "sourceMapPathOverrides": {
+        "webpack:///./src/*": "${webRoot}/src/*"
+      },
       "preLaunchTask": "Debug: Word Desktop",
       "postDebugTask": "Stop Debug"
     },
     {
-      "name": "Word Desktop (Edge Legacy)",
-      "type": "office-addin",
+      "name": "Attach to Word (Mac)",
+      "type": "webkit",
       "request": "attach",
-      "url": "https://localhost:3000/taskpane.html?_host_Info=Word$Win32$16.01$en-US$$$$0",
-      "port": 9222,
-      "timeout": 600000,
-      "webRoot": "${workspaceRoot}",
-      "preLaunchTask": "Debug: Word Desktop",
-      "postDebugTask": "Stop Debug"
+      "port": 9221,
+      "webRoot": "${workspaceFolder}",
+      "sourceMaps": true,
+      "sourceMapPathOverrides": {
+        "webpack:///./src/*": "${webRoot}/src/*"
+      }
     }
   ]
 }

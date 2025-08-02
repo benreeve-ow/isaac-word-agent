@@ -4,8 +4,10 @@
   "description": "Backend server for Word Claude Editor add-in",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js"
+    "start": "node server-https.js",
+    "start:http": "node server.js",
+    "dev": "nodemon server-https.js",
+    "dev:http": "nodemon server.js"
   },
   "keywords": [],
   "author": "",

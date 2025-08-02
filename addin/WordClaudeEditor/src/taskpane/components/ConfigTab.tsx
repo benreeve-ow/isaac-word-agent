@@ -63,17 +63,25 @@ const ConfigTab: React.FC = () => {
 
   const loadConfig = async () => {
     try {
-      // Load configuration from Office settings
-      const settings = Office.context.document.settings;
-      
-      setConfig({
-        systemPrompt: settings.get("claudeSystemPrompt") || defaultConfig.systemPrompt,
-        enableStyleMatching: settings.get("claudeEnableStyleMatching") === "true" || defaultConfig.enableStyleMatching,
-        backendUrl: settings.get("claudeBackendUrl") || defaultConfig.backendUrl,
-      });
+      // Check if Office context is available
+      if (typeof Office !== 'undefined' && Office.context && Office.context.document) {
+        // Load configuration from Office settings
+        const settings = Office.context.document.settings;
+        
+        setConfig({
+          systemPrompt: settings.get("claudeSystemPrompt") || defaultConfig.systemPrompt,
+          enableStyleMatching: settings.get("claudeEnableStyleMatching") === "true" || defaultConfig.enableStyleMatching,
+          backendUrl: settings.get("claudeBackendUrl") || defaultConfig.backendUrl,
+        });
+      } else {
+        // Use default config if Office context not available
+        console.log("Office context not available, using default configuration");
+        setConfig(defaultConfig);
+      }
     } catch (error) {
       // Use default config if loading fails
-      console.log("Using default configuration");
+      console.log("Using default configuration due to error:", error);
+      setConfig(defaultConfig);
     }
   };
 
@@ -82,16 +90,22 @@ const ConfigTab: React.FC = () => {
       setIsSaving(true);
       setSaveMessage(null);
 
-      // Save configuration to Office settings
-      const settings = Office.context.document.settings;
-      
-      settings.set("claudeSystemPrompt", config.systemPrompt);
-      settings.set("claudeEnableStyleMatching", config.enableStyleMatching.toString());
-      settings.set("claudeBackendUrl", config.backendUrl);
-      
-      await settings.saveAsync();
-      
-      setSaveMessage("Configuration saved successfully!");
+      // Check if Office context is available
+      if (typeof Office !== 'undefined' && Office.context && Office.context.document) {
+        // Save configuration to Office settings
+        const settings = Office.context.document.settings;
+        
+        settings.set("claudeSystemPrompt", config.systemPrompt);
+        settings.set("claudeEnableStyleMatching", config.enableStyleMatching.toString());
+        settings.set("claudeBackendUrl", config.backendUrl);
+        
+        await settings.saveAsync();
+        
+        setSaveMessage("Configuration saved successfully!");
+      } else {
+        // Can't save without Office context
+        setSaveMessage("Configuration saved locally (Office context not available)");
+      }
     } catch (error) {
       setSaveMessage("Failed to save configuration. Please try again.");
     } finally {

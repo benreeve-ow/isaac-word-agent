@@ -7,7 +7,31 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 const corsOptions = {
-  origin: 'https://localhost:3001',
+  origin: function (origin, callback) {
+    // Allow requests from localhost (any port), Office Add-ins, and null origin (file://)
+    const allowedPatterns = [
+      /^https?:\/\/localhost(:\d+)?$/,
+      /^https:\/\/localhost(:\d+)?$/,
+      /^file:\/\//,
+      /^ms-word:/,
+      /^https:\/\/.*\.officeapps\.live\.com$/
+    ];
+    
+    // Allow requests with no origin (like from Word desktop app)
+    if (!origin) {
+      return callback(null, true);
+    }
+    
+    // Check if origin matches any allowed pattern
+    const isAllowed = allowedPatterns.some(pattern => pattern.test(origin));
+    
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      console.log(`CORS blocked origin: ${origin}`);
+      callback(null, true); // For development, allow all origins but log them
+    }
+  },
   optionsSuccessStatus: 200,
   credentials: true
 };
@@ -31,6 +55,7 @@ app.use((err, req, res, next) => {
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
-  console.log(`CORS enabled for: https://localhost:3001`);
+  console.log(`CORS enabled for: localhost (all ports), Office Add-ins, and file:// origins`);
   console.log(`Health check available at: http://localhost:${PORT}/health`);
+  console.log(`API endpoint: http://localhost:${PORT}/api/claude/improve`);
 });

@@ -1,200 +1,238 @@
 # Word Claude Editor
 
-A Microsoft Word add-in that integrates Claude AI to help users improve their writing with intelligent suggestions, style matching, and comment implementation.
+A Microsoft Word add-in that integrates Claude AI to help users improve their writing with custom instructions, track changes integration, and style matching.
 
 ## Features
 
-- **Text Improvement**: Select text and get AI-powered improvements with explanations
-- **Comment Implementation**: Automatically implement reviewer comments using Claude
-- **Style Matching**: Analyze and match your document's writing style
-- **Track Changes Integration**: Seamlessly works with Word's native revision tracking
-- **Configurable Prompts**: Customize Claude's behavior with system prompts
-
-## Architecture
-
-```
-┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│   Word Add-in   │────▶│  Backend Server │────▶│   Claude API    │
-│   (React/TS)    │◀────│   (Express.js)  │◀────│  (Anthropic)    │
-└─────────────────┘     └─────────────────┘     └─────────────────┘
-```
-
-## Project Structure
-
-```
-word-claude-editor/
-├── backend/           # Express.js backend server
-│   ├── server.js     # Main server file
-│   ├── routes/       # API route handlers
-│   ├── services/     # Business logic services
-│   └── utils/        # Utility functions
-├── addin/            # Word add-in frontend
-│   └── WordClaudeEditor/
-│       ├── src/      # React source code
-│       └── manifest.xml
-└── README.md
-```
+- ✏️ **Custom AI Instructions** - Enter specific instructions for how Claude should improve your text
+- 📝 **Track Changes Integration** - Apply AI suggestions with Word's native track changes
+- 🎨 **Style Matching** - Analyze and match your document's writing style
+- 📊 **Context Management** - Smart context window handling (up to 140k tokens)
+- 🔍 **Real-time Debug Console** - Built-in debugging for troubleshooting
 
 ## Quick Start
 
 ### Prerequisites
 
 - Node.js 16+ and npm
-- Microsoft Word (Desktop or Online)
+- Microsoft Word (Desktop or Office 365)
 - Anthropic API key
 
-### Backend Setup
+### 1. Set up the Backend
 
 ```bash
+# Navigate to backend directory
 cd backend
+
+# Install dependencies
 npm install
-cp .env.example .env
-# Edit .env and add your ANTHROPIC_API_KEY
+
+# Create .env file with your Anthropic API key
+echo "ANTHROPIC_API_KEY=your-api-key-here" > .env
+
+# Start the HTTPS server
 npm start
 ```
 
-The backend server will run on `http://localhost:3000`
+The backend will run on `https://localhost:3000` using the Office add-in certificates.
 
-### Add-in Setup
+### 2. Set up the Add-in
 
 ```bash
+# Navigate to add-in directory
 cd addin/WordClaudeEditor
+
+# Install dependencies
 npm install
+
+# Start the development server
 npm run dev-server
 ```
 
-In a separate terminal:
+The add-in dev server will run on `https://localhost:3001`.
+
+### 3. Load the Add-in in Word
+
 ```bash
+# In the add-in directory, run:
 npm start
 ```
 
-The add-in will be available at `https://localhost:3001`
+This will:
+1. Start the dev server
+2. Open Word
+3. Automatically sideload the add-in
+
+## Usage
+
+1. **Select Text** - Highlight text in your Word document
+2. **Enter Instructions** - Type your improvement instructions or click an example
+3. **Apply Instructions** - Click to send to Claude API
+4. **Review Changes** - Preview the improved text with explanations
+5. **Apply to Document** - Insert with track changes enabled
+
+### Example Instructions
+
+- "Make this more concise"
+- "Expand with more detail"
+- "Fix grammar and improve clarity"
+- "Make the tone more formal"
+- "Turn into bullet points"
+
+## Project Structure
+
+```
+word-claude-editor/
+├── backend/               # Express.js backend server
+│   ├── server-https.js    # HTTPS server (default)
+│   ├── server.js          # HTTP server (legacy)
+│   ├── routes/            # API routes
+│   ├── services/          # Claude API integration
+│   └── utils/             # Token counting utilities
+└── addin/                 # Word add-in (React/TypeScript)
+    └── WordClaudeEditor/
+        ├── manifest.xml   # Office add-in manifest
+        ├── src/
+        │   ├── services/  # WordService & ClaudeService
+        │   └── taskpane/  # React components
+        └── dist/          # Built files
+```
+
+## Debugging
+
+### Built-in Debug Console
+
+The add-in includes a debug console that appears automatically when you use it:
+
+- **Green** - Successful operations
+- **Red** - Errors and failures  
+- **Blue** - Function boundaries
+- **Yellow** - API calls and responses
+
+### Common Issues & Solutions
+
+#### "Load failed" Error
+
+**Cause:** Mixed content blocking (HTTPS add-in calling HTTP backend)
+
+**Solution:** Ensure backend is running with HTTPS:
+```bash
+cd backend
+npm start  # Uses HTTPS by default
+```
+
+#### Certificate Warnings
+
+**Solution:** Accept the certificate in your browser:
+```bash
+open https://localhost:3000/health
+```
+
+#### No Text Selected
+
+**Solution:** Select text in Word before clicking "Apply Instructions"
+
+### Testing in Browser
+
+To test the UI without Word:
+```bash
+open addin/WordClaudeEditor/test-browser.html
+```
+
+### VS Code Debugging
+
+1. Open VS Code in `addin/WordClaudeEditor`
+2. Press F5 → "Debug in Browser (Chrome)"
+3. Set breakpoints in TypeScript files
 
 ## API Endpoints
 
-### POST /api/claude/improve
-Improves selected text with context awareness.
+### Backend API
 
-**Request:**
-```json
-{
-  "text": "Text to improve",
-  "contextBefore": "Previous paragraph",
-  "contextAfter": "Next paragraph",
-  "systemPrompt": "Custom instructions",
-  "stylePrompt": "Style guidelines"
-}
-```
+- `GET /health` - Health check
+- `POST /api/claude/improve` - Improve text with Claude
+  ```json
+  {
+    "text": "Text to improve",
+    "contextBefore": "Previous context",
+    "contextAfter": "Following context",
+    "userPrompt": "Make it better"
+  }
+  ```
 
-**Response:**
-```json
-{
-  "improvedText": "Enhanced version of the text",
-  "explanation": "What changes were made and why"
-}
-```
-
-### POST /api/claude/implement-comment
-Implements reviewer comments on selected text.
-
-**Request:**
-```json
-{
-  "text": "Original text",
-  "comment": "Reviewer's comment",
-  "context": "Document context",
-  "systemPrompt": "Custom instructions"
-}
-```
-
-**Response:**
-```json
-{
-  "editedText": "Text with comment implemented",
-  "explanation": "How the comment was addressed"
-}
-```
-
-### POST /api/claude/analyze-style
-Analyzes writing style from a text sample.
-
-**Request:**
-```json
-{
-  "sampleText": "Sample of writing to analyze",
-  "sampleSize": 500
-}
-```
-
-**Response:**
-```json
-{
-  "stylePrompt": "Detailed style description for matching",
-  "characteristics": ["formal", "technical", "concise"]
-}
-```
+- `POST /api/claude/implement-comment` - Implement reviewer comments
+- `POST /api/claude/analyze-style` - Analyze writing style
 
 ## Configuration
+
+### Change System Prompt
+
+1. Click the **Config** tab in the add-in
+2. Edit the system prompt to customize Claude's behavior
+3. Click **Save Configuration**
 
 ### Environment Variables
 
 Create a `.env` file in the backend directory:
 
 ```env
-ANTHROPIC_API_KEY=your_api_key_here
-PORT=3000
-NODE_ENV=development
+ANTHROPIC_API_KEY=sk-ant-api...
+PORT=3000  # Optional, defaults to 3000
 ```
 
-### CORS Settings
+## Development Scripts
 
-The backend is configured to accept requests from `https://localhost:3001`. Modify in `backend/server.js` if needed.
-
-## Development
-
-### Running Tests
+### Backend
 
 ```bash
-# Backend tests
-cd backend
-npm test
-
-# Add-in tests
-cd addin/WordClaudeEditor
-npm test
+npm start        # Start HTTPS server (production)
+npm run dev      # Start with nodemon (auto-reload)
+npm run start:http  # Start HTTP server (legacy)
 ```
 
-### Debugging
+### Add-in
 
-1. Backend logs are output to console
-2. Add-in debugging available through browser DevTools
-3. Use Word's built-in add-in debugging tools
+```bash
+npm start        # Load in Word
+npm run dev-server  # Start dev server only
+npm run build    # Build for production
+npm run validate # Validate manifest
+```
 
-## Security Considerations
+## Security Notes
 
-- API key is stored server-side only
-- CORS restricted to specific origins
-- Token limits enforced (150k max)
-- Input validation on all endpoints
-- No sensitive data logged
+- Never commit your `.env` file
+- The backend handles the API key, not the frontend
+- HTTPS is required for Word add-ins in production
+- Certificates are auto-generated for localhost development
 
 ## Troubleshooting
 
-### Common Issues
+### Clear Office Cache (if add-in won't update)
 
-1. **CORS errors**: Ensure backend allows `https://localhost:3001`
-2. **API key errors**: Verify ANTHROPIC_API_KEY in .env
-3. **Certificate errors**: Accept self-signed certificates for localhost
-4. **Rate limits**: Implement exponential backoff for retries
+**Mac:**
+```bash
+rm -rf ~/Library/Containers/com.microsoft.Word/Data/Documents/wef
+```
+
+**Windows:**
+```bash
+rm -rf %LOCALAPPDATA%\Microsoft\Office\16.0\Wef\
+```
+
+### Check Backend Health
+
+```bash
+curl -k https://localhost:3000/health
+```
+
+## Tech Stack
+
+- **Frontend:** React, TypeScript, Fluent UI, Office.js
+- **Backend:** Express.js, Anthropic SDK
+- **Build:** Webpack, Babel
+- **Development:** Office Add-in Dev Tools
 
 ## License
 
 MIT
-
-## Contributing
-
-Contributions welcome! Please read our contributing guidelines before submitting PRs.
-
-## Support
-
-For issues and questions, please open a GitHub issue.
