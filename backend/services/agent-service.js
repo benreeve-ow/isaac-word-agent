@@ -197,7 +197,7 @@ When asked to edit or improve text:
 
       let continueProcessing = true;
       let iterationCount = 0;
-      const maxIterations = 10; // Prevent infinite loops
+      const maxIterations = 100; // Prevent infinite loops
       let allToolUses = [];
 
       while (continueProcessing && iterationCount < maxIterations) {

@@ -234,8 +234,19 @@ const EditorTab: React.FC = () => {
 
       addDebugLog("API response received successfully");
       setImprovedText(response.improvedText);
-      setSuccess("Text improved successfully");
-      addDebugLog("Text improvement complete");
+      
+      // Automatically apply changes with track changes enabled
+      addDebugLog("Automatically applying changes with track changes...");
+      const result = await wordService.applyEditWithTracking(response.improvedText);
+      
+      if (result.success) {
+        setSuccess("Changes applied with track changes enabled");
+        setImprovedText("");
+        setUserPrompt("");
+        addDebugLog("Changes applied successfully with track changes");
+      } else {
+        throw new Error(result.error || "Failed to apply changes");
+      }
       
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : "An error occurred";
@@ -350,16 +361,7 @@ const EditorTab: React.FC = () => {
             {isLoading ? "Processing..." : "Edit Text"}
           </Button>
           
-          {improvedText && (
-            <Button
-              className={styles.actionButton}
-              icon={<CheckmarkRegular />}
-              onClick={handleApplyChanges}
-              appearance="secondary"
-            >
-              Apply Changes
-            </Button>
-          )}
+          {/* Apply Changes button removed - changes are now applied automatically */}
         </div>
       </div>
 
