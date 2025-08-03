@@ -225,10 +225,23 @@ const AgentTab: React.FC = () => {
   const [copiedDebug, setCopiedDebug] = useState(false);
   const [expandedTools, setExpandedTools] = useState<Set<number>>(new Set());
   const outputEndRef = useRef<HTMLDivElement>(null);
+  const streamIteratorRef = useRef<AsyncIterator<any> | null>(null);
 
   useEffect(() => {
     outputEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [output]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      // Cancel any ongoing agent execution when component unmounts
+      if (streamIteratorRef.current) {
+        agentService.cancelAgent();
+        streamIteratorRef.current.return?.();
+        streamIteratorRef.current = null;
+      }
+    };
+  }, []);
 
   const addDebugLog = (message: string) => {
     const timestamp = new Date().toLocaleTimeString("en-US", { 
@@ -405,8 +418,11 @@ const AgentTab: React.FC = () => {
       addDebugLog("Starting to stream agent response...");
       
       let stream;
+      let streamIterator;
       try {
         stream = agentService.streamAgentResponse(userPrompt, documentContext);
+        streamIterator = stream[Symbol.asyncIterator]();
+        streamIteratorRef.current = streamIterator;
       } catch (streamError) {
         const errorMsg = streamError instanceof Error ? streamError.message : "Failed to connect to backend";
         addDebugLog(`ERROR creating stream: ${errorMsg}`);
@@ -418,11 +434,25 @@ const AgentTab: React.FC = () => {
       setStatus("Agent is working...");
       
       let currentMessage = "";
+      let cancelled = false;
       
-      for await (const message of stream) {
-        addDebugLog(`Received message type: ${message.type}`);
-        
-        switch (message.type) {
+      try {
+        while (true) {
+          const { value: message, done } = await streamIterator.next();
+          
+          if (done) break;
+          if (!message) continue;
+          // Check if we've been cancelled
+          if (message.type === "error" && message.data.error === "Cancelled by user") {
+            cancelled = true;
+            addDebugLog("Agent execution cancelled by user");
+            setStatus("Cancelled");
+            break;
+          }
+          
+          addDebugLog(`Received message type: ${message.type}`);
+          
+          switch (message.type) {
           case "content":
             currentMessage += message.data.content;
             addDebugLog(`Content chunk received: ${message.data.content.length} chars`);
@@ -477,9 +507,14 @@ const AgentTab: React.FC = () => {
           default:
             addDebugLog(`Unknown message type: ${message.type}`);
         }
+        }
+      } finally {
+        streamIteratorRef.current = null;
       }
       
-      addDebugLog("Stream ended");
+      if (!cancelled) {
+        addDebugLog("Stream ended normally");
+      }
     } catch (err) {
       console.error("Agent error:", err);
       let errorMsg = "Agent execution failed";
@@ -508,12 +543,32 @@ const AgentTab: React.FC = () => {
   };
 
   const handleStop = () => {
-    // In a real implementation, this would cancel the stream
+    addDebugLog("Stop button clicked - cancelling agent");
+    
+    // Cancel the agent service stream
+    agentService.cancelAgent();
+    
+    // If we have an active stream iterator, try to close it
+    if (streamIteratorRef.current) {
+      try {
+        streamIteratorRef.current.return?.();
+      } catch (e) {
+        console.error("Error closing stream iterator:", e);
+      }
+      streamIteratorRef.current = null;
+    }
+    
     setIsRunning(false);
     setStatus("Stopped by user");
+    addDebugLog("Agent execution stopped");
   };
 
   const handleReset = () => {
+    // First stop any ongoing agent execution
+    if (isRunning) {
+      handleStop();
+    }
+    
     // Clear all state for a fresh start
     setUserPrompt("");
     setOutput([]);

@@ -24,6 +24,7 @@ class AgentServiceClass {
   private backendUrl: string = "";
   private toolExecutor: ToolExecutor;
   private toolRegistry: ToolRegistry;
+  private currentAbortController: AbortController | null = null;
   
   constructor() {
     // Initialize the tool system
@@ -108,12 +109,30 @@ class AgentServiceClass {
   }
   
   /**
+   * Cancel any ongoing agent execution
+   */
+  cancelAgent(): void {
+    if (this.currentAbortController) {
+      console.log("[AgentService] Cancelling agent execution");
+      this.currentAbortController.abort();
+      this.currentAbortController = null;
+    }
+  }
+  
+  /**
    * Stream agent responses with tool execution
    */
   async *streamAgentResponse(
     userPrompt: string, 
     documentContext: string
   ): AsyncGenerator<AgentMessage> {
+    // Cancel any existing execution
+    this.cancelAgent();
+    
+    // Create new abort controller for this execution
+    this.currentAbortController = new AbortController();
+    const signal = this.currentAbortController.signal;
+    
     try {
       const response = await fetch(`${this.backendUrl}/api/agent/stream`, {
         method: "POST",
@@ -125,7 +144,8 @@ class AgentServiceClass {
           messages: [{ role: "user", content: userPrompt }],
           documentContext,
           tools: getToolDefinitionsForAgent() // Send tool definitions to backend
-        })
+        }),
+        signal // Pass abort signal to fetch
       });
       
       if (!response.ok) {
@@ -141,6 +161,13 @@ class AgentServiceClass {
       let buffer = "";
       
       while (true) {
+        // Check if cancelled
+        if (signal.aborted) {
+          console.log("[AgentService] Stream cancelled by user");
+          yield { type: "error", data: { error: "Cancelled by user" } };
+          break;
+        }
+        
         const { done, value } = await reader.read();
         
         if (done) break;
@@ -150,11 +177,19 @@ class AgentServiceClass {
         buffer = lines.pop() || "";
         
         for (const line of lines) {
+          // Check cancellation before processing each line
+          if (signal.aborted) {
+            console.log("[AgentService] Stream cancelled during processing");
+            yield { type: "error", data: { error: "Cancelled by user" } };
+            return;
+          }
+          
           if (line.startsWith("data: ")) {
             const data = line.slice(6);
             
             if (data === "[DONE]") {
               yield { type: "complete", data: {} };
+              this.currentAbortController = null; // Clear on completion
               return;
             }
             
@@ -163,6 +198,13 @@ class AgentServiceClass {
               
               // Handle tool use messages
               if (message.type === "tool_use") {
+                // Check cancellation before tool execution
+                if (signal.aborted) {
+                  console.log("[AgentService] Cancelled before tool execution");
+                  yield { type: "error", data: { error: "Cancelled by user" } };
+                  return;
+                }
+                
                 console.log(`[AgentService] Executing tool: ${message.data.name}`);
                 
                 try {
@@ -198,12 +240,23 @@ class AgentServiceClass {
           }
         }
       }
-    } catch (error) {
-      console.error("Agent stream error:", error);
-      yield {
-        type: "error",
-        data: { error: error instanceof Error ? error.message : "Unknown error" }
-      };
+    } catch (error: any) {
+      // Handle abort specifically
+      if (error.name === 'AbortError') {
+        console.log("[AgentService] Request aborted");
+        yield { type: "error", data: { error: "Cancelled by user" } };
+      } else {
+        console.error("Agent stream error:", error);
+        yield {
+          type: "error",
+          data: { error: error instanceof Error ? error.message : "Unknown error" }
+        };
+      }
+    } finally {
+      // Clean up abort controller
+      if (this.currentAbortController?.signal === signal) {
+        this.currentAbortController = null;
+      }
     }
   }
   
