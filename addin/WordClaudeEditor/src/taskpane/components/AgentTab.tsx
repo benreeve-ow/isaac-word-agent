@@ -584,7 +584,7 @@ const AgentTab: React.FC = () => {
           if (item.type === "content") {
             return (
               <div key={index} className={styles.messageText}>
-                {item.text}
+                {formatSummaryText(item.text)}
               </div>
             );
           }
@@ -598,15 +598,19 @@ const AgentTab: React.FC = () => {
                   {getToolIcon(item.name)}
                   <Text className={styles.toolName}>{item.name}</Text>
                   {item.name === "search_document" ? (
-                    Array.isArray(item.result) && item.result.length > 0 ? (
+                    item.result?.data && Array.isArray(item.result.data) && item.result.data.length > 0 ? (
                       <Badge size="small" appearance="tint" color="success">
-                        {item.result.length} match{item.result.length > 1 ? "es" : ""}
+                        {item.result.data.length} match{item.result.data.length > 1 ? "es" : ""}
                       </Badge>
                     ) : (
                       <Badge size="small" appearance="tint" color="warning">
                         No matches
                       </Badge>
                     )
+                  ) : item.name === "read_full_document" && item.result?.success ? (
+                    <Badge size="small" appearance="tint" color="informative">
+                      {item.result.data?.metadata?.wordCount || 0} words
+                    </Badge>
                   ) : item.result?.success ? (
                     <Badge size="small" appearance="tint" color="success">
                       Success

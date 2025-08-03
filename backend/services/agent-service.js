@@ -6,67 +6,55 @@ class AgentService {
   }
 
   // Tool definitions for document editing
-  getTools() {
+  // Can be overridden by frontend-provided tools
+  getTools(customTools = null) {
+    if (customTools && Array.isArray(customTools)) {
+      return customTools;
+    }
+    
+    // Default tools matching the frontend tool system
     return [
+      // === SEARCH & NAVIGATION ===
       {
         name: "search_document",
-        description: "Search for text in the document with context. Use this to locate content before editing.",
+        description: "Search for text in the document and return matches with context",
         input_schema: {
           type: "object",
           properties: {
-            pattern: {
-              type: "string",
-              description: "Text or regex pattern to search for"
-            },
-            scope: {
-              type: "string",
-              enum: ["entire_document", "current_section", "selected_range"],
-              description: "Scope of the search"
-            },
-            context_lines: {
-              type: "number",
-              description: "Number of paragraphs to include for context",
-              default: 2
-            }
+            pattern: { type: "string", description: "The text pattern to search for" },
+            context_lines: { type: "number", description: "Number of context lines around matches", default: 2 },
+            match_case: { type: "boolean", description: "Whether to match case exactly", default: false },
+            whole_word: { type: "boolean", description: "Whether to match whole words only", default: false }
           },
           required: ["pattern"]
         }
       },
+      
+      // === EDITING TOOLS ===
       {
         name: "edit_content",
-        description: "Edit specific content in the document with track changes enabled",
+        description: "Replace specific text in the document with new content",
         input_schema: {
           type: "object",
           properties: {
-            search_text: {
-              type: "string",
-              description: "The exact text to find and replace (must match exactly)"
-            },
-            replacement_text: {
-              type: "string",
-              description: "The new text to replace with"
-            },
-            location_hint: {
-              type: "string",
-              description: "Optional hint about where this text appears (e.g., 'in the introduction', 'after the heading X')"
-            }
+            search_text: { type: "string", description: "The text to search for and replace" },
+            replacement_text: { type: "string", description: "The new text to replace with" },
+            match_case: { type: "boolean", description: "Whether to match case exactly", default: false },
+            replace_all: { type: "boolean", description: "Whether to replace all occurrences", default: false }
           },
           required: ["search_text", "replacement_text"]
         }
       },
       {
         name: "insert_content",
-        description: "Insert new content at a specific location with proper formatting",
+        description: "Insert new content at a specific position in the document",
         input_schema: {
           type: "object",
           properties: {
-            content: {
-              type: "string",
-              description: "The content to insert"
-            },
+            content: { type: "string", description: "The content to insert" },
             position: {
               type: "string",
-              enum: ["beginning", "end", "after_text", "before_text"],
+              enum: ["beginning", "end", "after_text", "before_text", "after_selection", "before_selection"],
               description: "Where to insert the content"
             },
             reference_text: {
@@ -77,6 +65,129 @@ class AgentService {
           required: ["content", "position"]
         }
       },
+      
+      // === FORMATTING TOOLS ===
+      {
+        name: "apply_formatting",
+        description: "Apply text formatting like bold, italic, underline to selected text or specific content",
+        input_schema: {
+          type: "object",
+          properties: {
+            format_type: {
+              type: "string",
+              enum: ["bold", "italic", "underline", "strikethrough", "subscript", "superscript", "highlight"],
+              description: "Type of formatting to apply"
+            },
+            value: { type: "boolean", description: "Whether to apply (true) or remove (false) the formatting", default: true },
+            target_text: { type: "string", description: "Specific text to format (if not provided, uses selection)" },
+            highlight_color: {
+              type: "string",
+              enum: ["yellow", "green", "blue", "red", "pink", "gray"],
+              description: "Highlight color (for highlight format type)",
+              default: "yellow"
+            }
+          },
+          required: ["format_type"]
+        }
+      },
+      {
+        name: "apply_style",
+        description: "Apply paragraph or character styles to text",
+        input_schema: {
+          type: "object",
+          properties: {
+            style_name: {
+              type: "string",
+              enum: ["Normal", "Heading 1", "Heading 2", "Heading 3", "Heading 4", "Title", "Subtitle", "Quote", "Intense Quote", "Emphasis", "Strong", "List Paragraph", "No Spacing", "Code"],
+              description: "Name of the style to apply"
+            },
+            target: {
+              type: "string",
+              enum: ["selection", "paragraph", "document"],
+              description: "What to apply the style to",
+              default: "selection"
+            }
+          },
+          required: ["style_name"]
+        }
+      },
+      
+      // === REVIEW TOOLS ===
+      {
+        name: "add_comment",
+        description: "Add a review comment to selected text or specific location",
+        input_schema: {
+          type: "object",
+          properties: {
+            comment_text: { type: "string", description: "The text of the comment" },
+            target_text: { type: "string", description: "Text to attach the comment to (if not using selection)" },
+            comment_type: {
+              type: "string",
+              enum: ["suggestion", "question", "issue", "praise", "general"],
+              description: "Type of comment",
+              default: "general"
+            },
+            priority: {
+              type: "string",
+              enum: ["high", "medium", "low"],
+              description: "Priority level of the comment",
+              default: "medium"
+            }
+          },
+          required: ["comment_text"]
+        }
+      },
+      
+      // === STRUCTURE TOOLS ===
+      {
+        name: "insert_table",
+        description: "Insert a table at the current position or specified location",
+        input_schema: {
+          type: "object",
+          properties: {
+            rows: { type: "number", description: "Number of rows" },
+            columns: { type: "number", description: "Number of columns" },
+            data: { type: "array", description: "Optional 2D array of data to populate the table" },
+            header_row: { type: "boolean", description: "Whether the first row should be formatted as a header", default: true },
+            style: {
+              type: "string",
+              enum: ["Grid", "List", "PlainTable", "TableGrid", "LightShading", "MediumShading"],
+              description: "Table style to apply",
+              default: "Grid"
+            },
+            position: {
+              type: "string",
+              enum: ["cursor", "end", "after_paragraph"],
+              description: "Where to insert the table",
+              default: "cursor"
+            }
+          },
+          required: ["rows", "columns"]
+        }
+      },
+      {
+        name: "insert_break",
+        description: "Insert page breaks, section breaks, or line breaks",
+        input_schema: {
+          type: "object",
+          properties: {
+            break_type: {
+              type: "string",
+              enum: ["page", "section_next", "section_continuous", "line", "paragraph"],
+              description: "Type of break to insert"
+            },
+            position: {
+              type: "string",
+              enum: ["cursor", "after_selection", "before_selection", "end"],
+              description: "Where to insert the break",
+              default: "cursor"
+            }
+          },
+          required: ["break_type"]
+        }
+      },
+      
+      // === ANALYSIS TOOLS ===
       {
         name: "analyze_structure",
         description: "Analyze the document structure to understand headings, sections, and organization",
@@ -126,15 +237,26 @@ class AgentService {
 
 ## Working Principles:
 
-1. **Always Search Before Editing**: Before making any edit, use search_document to locate the exact text and understand its context.
+1. **Search Strategy**:
+   - Start with search_document to locate specific text
+   - Search results now include FULL paragraphs and extensive context
+   - If search isn't finding what you need (e.g., section numbers, dispersed content), use read_full_document
+   - Use read_full_document when you need to understand overall structure or find content that's hard to search for
 
-2. **Make Small, Precise Edits**: Break large changes into smaller, focused edits. Each edit should change one specific thing.
+2. **When to Read Full Document**:
+   - Document is small (< 25k tokens estimated)
+   - Need to find section numbers or hierarchical structure
+   - Search is returning no results but you know content exists
+   - Need to understand document flow and organization
+   - Working with numbered lists or outline structures
 
-3. **Preserve Document Structure**: Maintain the document's formatting, style, and structure unless explicitly asked to change it.
+3. **Make Small, Precise Edits**: Break large changes into smaller, focused edits. Each edit should change one specific thing.
 
-4. **Be Transparent**: Explain what you're doing and why. Each tool use should have a clear purpose.
+4. **Preserve Document Structure**: Maintain the document's formatting, style, and structure unless explicitly asked to change it.
 
-5. **Know When to Stop**: Use complete_editing when you've finished all requested changes.
+5. **Be Transparent**: Explain what you're doing and why. Each tool use should have a clear purpose.
+
+6. **Know When to Stop**: Use complete_editing when you've finished all requested changes.
 
 ## Edit Strategy:
 
@@ -146,12 +268,16 @@ When asked to edit or improve text:
 5. Validate changes make sense in context
 6. Call complete_editing with a summary
 
-## CRITICAL: How to use edit_content:
-- **MAXIMUM search_text length: 150 characters** (Word will reject longer searches)
+## CRITICAL: How to use edit_content and add_comment:
+- **MAXIMUM search_text/target_text length: 150 characters** (Word will reject longer searches)
 - Search for UNIQUE SHORT PHRASES (1-2 sentences max)
 - NEVER search for entire paragraphs
+- **IMPORTANT: When copying text from search results, preserve the exact formatting including line breaks**
+- Line breaks appear as actual newlines in the document, not as \n characters
+- When searching for multi-line text, include the line breaks exactly as they appear
 - Break large edits into multiple smaller operations
 - For expanding text, prefer insert_content over replacing entire sections
+- For add_comment: If target_text is too long, use a unique phrase from the beginning of the target paragraph
 - Example: To expand a paragraph:
   1. Search for a short unique phrase (like "cognitive load reduction.")
   2. Use insert_content with position: "after_text" to add new content
@@ -175,18 +301,29 @@ When asked to edit or improve text:
 - Focus on accuracy over speed - it's better to make correct edits than many edits
 - If a search fails, try a shorter unique phrase from the same section
 - Some search failures are normal - continue with alternative approaches
-- Always format inserted content with proper paragraph structure`;
+- Always format inserted content with proper paragraph structure
+
+## Error Handling:
+- If a tool returns "SearchStringInvalidOrTooLong", the search text was too long (>150 chars)
+- When this happens, use a shorter, unique phrase from the beginning of the text
+- For add_comment with long target text: use the first 100 characters or first sentence
+- Tool failures are normal - always have a fallback strategy
+- Never assume a tool succeeded if you see an error - try an alternative approach`;
   }
 
   async streamAgentResponse({ 
     messages, 
     documentContext,
+    tools,  // Accept custom tools
     onToolUse,
     onContent,
     onError,
     onComplete
   }) {
     try {
+      // Use custom tools if provided, otherwise use defaults
+      const availableTools = this.getTools(tools);
+      
       // Build conversation with proper tool use handling
       const conversationMessages = [
         {
@@ -210,7 +347,7 @@ When asked to edit or improve text:
           temperature: 0.3,
           system: this.getSystemPrompt(),
           messages: conversationMessages,
-          tools: this.getTools(),
+          tools: availableTools,
           tool_choice: { type: "auto" },
           stream: true
         });
@@ -288,12 +425,16 @@ When asked to edit or improve text:
                   });
 
                   // Add tool result to continue conversation
+                  // Note: Since tools execute on the frontend, we need to wait for the result
+                  // For now, we'll assume success but should be enhanced to get actual results
                   conversationMessages.push({
                     role: "user",
                     content: [{
                       type: "tool_result",
                       tool_use_id: currentToolUse.id,
-                      content: "Tool executed successfully. Continue with the next step."
+                      content: "Tool execution requested. Continue with the next step.",
+                      // TODO: Get actual tool result from frontend
+                      is_error: false
                     }]
                   });
                 }

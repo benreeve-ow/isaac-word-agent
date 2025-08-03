@@ -12,11 +12,12 @@ router.post("/agent/stream", async (req, res) => {
     "Access-Control-Allow-Origin": "*",
   });
 
-  const { messages, documentContext } = req.body;
+  const { messages, documentContext, tools } = req.body;
 
   if (!messages || !documentContext) {
-    res.write(`event: error\ndata: ${JSON.stringify({ 
-      error: "Missing required fields" 
+    res.write(`data: ${JSON.stringify({ 
+      type: "error",
+      data: { error: "Missing required fields" }
     })}\n\n`);
     res.end();
     return;
@@ -24,8 +25,9 @@ router.post("/agent/stream", async (req, res) => {
 
   // Check if API key is configured
   if (!process.env.ANTHROPIC_API_KEY) {
-    res.write(`event: error\ndata: ${JSON.stringify({ 
-      error: "Anthropic API key not configured. Please set ANTHROPIC_API_KEY in backend/.env file" 
+    res.write(`data: ${JSON.stringify({ 
+      type: "error",
+      data: { error: "Anthropic API key not configured. Please set ANTHROPIC_API_KEY in backend/.env file" }
     })}\n\n`);
     res.end();
     return;
@@ -37,38 +39,48 @@ router.post("/agent/stream", async (req, res) => {
     await agentService.streamAgentResponse({
       messages,
       documentContext,
+      tools, // Pass custom tools if provided
       onToolUse: async (toolUse) => {
-        // Send tool use to client
-        res.write(`event: tool_use\ndata: ${JSON.stringify({
-          id: toolUse.id,
-          name: toolUse.name,
-          input: toolUse.input
+        // Send tool use to client with type field
+        res.write(`data: ${JSON.stringify({
+          type: "tool_use",
+          data: {
+            id: toolUse.id,
+            name: toolUse.name,
+            input: toolUse.input
+          }
         })}\n\n`);
         
         // Return a placeholder result - the actual execution happens on the client
         return { success: true, message: "Tool executed on client" };
       },
       onContent: (content) => {
-        // Send content chunks
-        res.write(`event: content\ndata: ${JSON.stringify({
-          content
+        // Send content chunks with type field
+        res.write(`data: ${JSON.stringify({
+          type: "content",
+          data: { content }
         })}\n\n`);
       },
       onError: (error) => {
         console.error("[Agent Route] Error:", error);
-        res.write(`event: error\ndata: ${JSON.stringify({
-          error: error.message || "Unknown error occurred"
+        res.write(`data: ${JSON.stringify({
+          type: "error",
+          data: { error: error.message || "Unknown error occurred" }
         })}\n\n`);
       },
       onComplete: (result) => {
-        res.write(`event: complete\ndata: ${JSON.stringify(result)}\n\n`);
+        res.write(`data: ${JSON.stringify({
+          type: "complete",
+          data: result
+        })}\n\n`);
         res.end();
       }
     });
   } catch (error) {
     console.error("Agent route error:", error);
-    res.write(`event: error\ndata: ${JSON.stringify({
-      error: error.message || "Agent processing failed"
+    res.write(`data: ${JSON.stringify({
+      type: "error",
+      data: { error: error.message || "Agent processing failed" }
     })}\n\n`);
     res.end();
   }
