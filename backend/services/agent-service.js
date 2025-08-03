@@ -118,12 +118,18 @@ class AgentService {
       // === REVIEW TOOLS ===
       {
         name: "add_comment",
-        description: "Add a review comment to selected text or specific location",
+        description: "Add a review comment to selected text or specific location. IMPORTANT: Each comment must ONLY discuss the specific text it's attached to. Create multiple comments for multiple issues.",
         input_schema: {
           type: "object",
           properties: {
-            comment_text: { type: "string", description: "The text of the comment" },
-            target_text: { type: "string", description: "Text to attach the comment to (if not using selection)" },
+            comment_text: { 
+              type: "string", 
+              description: "The text of the comment. Must be specific to the target text only - do not reference other parts of the document." 
+            },
+            target_text: { 
+              type: "string", 
+              description: "Text to attach the comment to (max 150 chars). Use a unique phrase from the target paragraph." 
+            },
             comment_type: {
               type: "string",
               enum: ["suggestion", "question", "issue", "praise", "general"],
@@ -261,6 +267,13 @@ class AgentService {
 
 6. **Know When to Stop**: Use complete_editing when you've finished all requested changes.
 
+7. **Comment Specificity Rule**: 
+   - ONE comment per issue, attached to the specific text it discusses
+   - Example: If you find three instances of missing citations:
+     * BAD: One comment on first instance saying "This and two other places need citations"
+     * GOOD: Three separate comments, each attached to its specific paragraph needing a citation
+   - Each comment is independent and self-contained
+
 ## Edit Strategy:
 
 When asked to edit or improve text:
@@ -281,6 +294,13 @@ When asked to edit or improve text:
 - Break large edits into multiple smaller operations
 - For expanding text, prefer insert_content over replacing entire sections
 - For add_comment: If target_text is too long, use a unique phrase from the beginning of the target paragraph
+- **CRITICAL for add_comment**: 
+  - Each comment must ONLY discuss the specific text it's attached to
+  - NEVER include information about other parts of the document in a single comment
+  - If you have multiple issues to flag (e.g., three examples of poor formatting), create THREE separate comments, one for each example
+  - Each comment should be self-contained and specific to its target text
+  - Bad: "This is the first of three issues with formatting in the document..."
+  - Good: "This paragraph lacks proper citation format."
 - Example: To expand a paragraph:
   1. Search for a short unique phrase (like "cognitive load reduction.")
   2. Use insert_content with position: "after_text" to add new content
