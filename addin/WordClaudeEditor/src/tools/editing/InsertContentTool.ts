@@ -100,8 +100,15 @@ export class InsertContentTool extends BaseTool {
           await context.document.context.sync();
           
           insertLocation = paragraph.getRange(Word.RangeLocation.after);
-          // Remove leading newlines as Word already provides spacing
-          contentToInsert = contentToInsert.replace(/^\n+/, '');
+          // Ensure proper paragraph spacing
+          // Add a line break at the start if content doesn't have one
+          if (!contentToInsert.startsWith('\n')) {
+            contentToInsert = '\n' + contentToInsert;
+          }
+          // Add a line break at the end if inserting a full paragraph
+          if (contentToInsert.length > 50 && !contentToInsert.endsWith('\n')) {
+            contentToInsert = contentToInsert + '\n';
+          }
         } else {
           // For before_text, insert at the start of the reference
           insertLocation = referenceRange.getRange(Word.RangeLocation.start);

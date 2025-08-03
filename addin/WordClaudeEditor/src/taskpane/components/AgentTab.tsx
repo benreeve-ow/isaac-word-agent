@@ -22,6 +22,7 @@ import {
   ChevronDownRegular,
   ChevronRightRegular,
   CopyRegular,
+  DismissRegular,
 } from "@fluentui/react-icons";
 import { agentService, ToolUse } from "../../services/AgentService";
 
@@ -138,6 +139,16 @@ const useStyles = makeStyles({
     fontSize: "12px",
     lineHeight: "1.5",
   },
+  newTaskButton: {
+    marginTop: "12px",
+    fontSize: "12px",
+    height: "32px",
+    backgroundColor: "#1a1a1a",
+    color: "#ffffff",
+    "&:hover": {
+      backgroundColor: "#2d2d2d",
+    },
+  },
   debugSection: {
     borderTop: `1px solid ${tokens.colorNeutralStroke1}`,
     backgroundColor: "#fafafa",
@@ -189,6 +200,13 @@ const useStyles = makeStyles({
   },
   sectionWithCopy: {
     position: "relative" as const,
+  },
+  resetButton: {
+    fontSize: "12px",
+    height: "32px",
+    paddingLeft: "12px",
+    paddingRight: "12px",
+    minWidth: "auto",
   },
 });
 
@@ -495,6 +513,17 @@ const AgentTab: React.FC = () => {
     setStatus("Stopped by user");
   };
 
+  const handleReset = () => {
+    // Clear all state for a fresh start
+    setUserPrompt("");
+    setOutput([]);
+    setStatus("");
+    setError(null);
+    setDebugLog([]);
+    setExpandedTools(new Set());
+    addDebugLog("Session reset - ready for new task");
+  };
+
   return (
     <div className={styles.container}>
       <div className={styles.inputSection}>
@@ -527,6 +556,18 @@ const AgentTab: React.FC = () => {
               appearance="secondary"
             >
               Stop
+            </Button>
+          )}
+          
+          {!isRunning && (output.length > 0 || error) && (
+            <Button
+              className={styles.resetButton}
+              icon={<DismissRegular />}
+              onClick={handleReset}
+              appearance="subtle"
+              title="Clear results and start fresh"
+            >
+              Clear
             </Button>
           )}
           
@@ -667,6 +708,14 @@ const AgentTab: React.FC = () => {
                     Confidence: {item.confidence}
                   </Badge>
                 )}
+                <Button
+                  className={styles.newTaskButton}
+                  icon={<PlayRegular />}
+                  onClick={handleReset}
+                  appearance="primary"
+                >
+                  Start New Task
+                </Button>
               </div>
             );
           }

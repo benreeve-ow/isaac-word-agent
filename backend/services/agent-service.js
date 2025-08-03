@@ -47,11 +47,14 @@ class AgentService {
       },
       {
         name: "insert_content",
-        description: "Insert new content at a specific position in the document",
+        description: "Insert new content at a specific position in the document. IMPORTANT: End paragraphs with \\n to maintain proper document structure.",
         input_schema: {
           type: "object",
           properties: {
-            content: { type: "string", description: "The content to insert" },
+            content: { 
+              type: "string", 
+              description: "The content to insert. For full paragraphs, end with \\n to prevent running into next section." 
+            },
             position: {
               type: "string",
               enum: ["beginning", "end", "after_text", "before_text", "after_selection", "before_selection"],
@@ -284,6 +287,10 @@ When asked to edit or improve text:
   3. This avoids the search length limit entirely
 
 ## CRITICAL: Formatting Guidelines:
+- **PARAGRAPH STRUCTURE**: 
+  - ALWAYS end full paragraphs with a line break (\n) to maintain document structure
+  - When using insert_content to add a paragraph, include \n at the end
+  - This prevents your text from running into the next section/heading
 - **Mimic existing document formatting**: 
   - First examine the surrounding text to understand the document's formatting style
   - If the document uses single line breaks between paragraphs, use single \n
@@ -293,7 +300,11 @@ When asked to edit or improve text:
 - **For academic/professional documents**: Usually single \n between paragraphs (no blank lines)
 - **For casual/blog-style documents**: May use \n\n for visual separation
 - **Lists**: Match the document's list style (bullets, numbers, indentation)
-- IMPORTANT: Default to single \n unless you observe the document clearly uses blank lines between paragraphs
+- **Examples of proper formatting**:
+  - Adding a paragraph: "This is my new paragraph content.\n"
+  - Adding multiple paragraphs: "First paragraph.\n\nSecond paragraph.\n"
+  - Inline text (not a paragraph): "this additional text" (no line break)
+- IMPORTANT: Default to single \n at the end of paragraphs unless you observe the document clearly uses blank lines
 
 ## Important Notes:
 - All edits will be tracked with Word's Track Changes feature
