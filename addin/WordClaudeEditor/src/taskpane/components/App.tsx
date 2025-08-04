@@ -17,6 +17,7 @@ import Header from "./Header";
 import EditorTab from "./EditorTab";
 import ConfigTab from "./ConfigTab";
 import AgentTab from "./AgentTab";
+import ReviewTab from "./ReviewTab";
 
 interface AppProps {
   title: string;
@@ -76,7 +77,7 @@ const App: React.FC<AppProps> = () => {
   const [selectedMode, setSelectedMode] = useState<string>("edit");
 
   const modes = [
-    { id: "review", icon: <DocumentSearchRegular />, label: "Review", disabled: true },
+    { id: "review", icon: <DocumentSearchRegular />, label: "Review", disabled: false },
     { id: "edit", icon: <EditRegular />, label: "Edit Selection", disabled: false },
     { id: "agent", icon: <SparkleRegular />, label: "Agent", disabled: false },
   ];
@@ -119,6 +120,7 @@ const App: React.FC<AppProps> = () => {
       </div>
 
       <div className={styles.content}>
+        {selectedMode === "review" && <ReviewTab />}
         {selectedMode === "edit" && <EditorTab />}
         {selectedMode === "agent" && <AgentTab />}
         {selectedMode === "config" && <ConfigTab />}

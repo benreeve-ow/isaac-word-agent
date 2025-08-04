@@ -6,11 +6,25 @@ class AgentService {
   }
 
   // Tool definitions for document editing
-  // Can be overridden by frontend-provided tools
-  getTools(customTools = null) {
-    if (customTools && Array.isArray(customTools)) {
-      return customTools;
+  // Can be overridden by frontend-provided tools or filtered by mode
+  getTools(customTools = null, mode = null) {
+    let tools = customTools;
+    
+    if (!tools || !Array.isArray(tools)) {
+      tools = this.getDefaultTools();
     }
+    
+    // Filter tools based on mode if provided
+    if (mode && mode.allowedTools && mode.allowedTools !== "*") {
+      tools = tools.filter(tool => mode.allowedTools.includes(tool.name));
+      console.log(`[AgentService] Filtered tools for mode ${mode.id}: ${tools.map(t => t.name).join(", ")}`);
+    }
+    
+    return tools;
+  }
+  
+  // Get default tool definitions
+  getDefaultTools() {
     
     // Default tools matching the frontend tool system
     return [

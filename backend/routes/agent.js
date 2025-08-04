@@ -13,7 +13,7 @@ router.post("/agent/stream", async (req, res) => {
     "Access-Control-Allow-Origin": "*",
   });
 
-  const { messages, documentContext, tools } = req.body;
+  const { messages, documentContext, tools, mode } = req.body;
 
   if (!messages || !documentContext) {
     res.write(`data: ${JSON.stringify({ 
@@ -36,11 +36,14 @@ router.post("/agent/stream", async (req, res) => {
 
   const agentService = new AgentService(process.env.ANTHROPIC_API_KEY);
 
+  // Filter tools based on mode if provided
+  const filteredTools = agentService.getTools(tools, mode);
+
   try {
     await agentService.streamAgentResponse({
       messages,
       documentContext,
-      tools, // Pass custom tools if provided
+      tools: filteredTools, // Use filtered tools based on mode
       onToolUse: async (toolUse) => {
         // Send tool use to client for execution
         res.write(`data: ${JSON.stringify({

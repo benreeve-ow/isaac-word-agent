@@ -439,6 +439,92 @@ class WordService {
       return false;
     }
   }
+
+  /**
+   * Get selected text from the document
+   */
+  public async getSelectedText(): Promise<string> {
+    try {
+      return await Word.run(async (context) => {
+        const selection = context.document.getSelection();
+        selection.load("text");
+        await context.sync();
+        return selection.text || "";
+      });
+    } catch (error) {
+      console.error("Error getting selected text:", error);
+      return "";
+    }
+  }
+
+  /**
+   * Enable or disable track changes
+   */
+  public async setTrackChanges(enabled: boolean): Promise<boolean> {
+    try {
+      const mode = enabled ? Word.ChangeTrackingMode.trackAll : Word.ChangeTrackingMode.off;
+      return await this.setTrackChangesMode(mode);
+    } catch (error) {
+      console.error("Error setting track changes:", error);
+      return false;
+    }
+  }
+
+  /**
+   * Get document context for AI processing
+   */
+  public async getDocumentContext(): Promise<any> {
+    try {
+      return await Word.run(async (context) => {
+        const body = context.document.body;
+        const properties = context.document.properties;
+        
+        // Load document content and properties
+        context.load(body, "text");
+        context.load(properties, ["title", "subject", "author"]);
+        
+        await context.sync();
+        
+        const text = body.text;
+        const wordCount = text.split(/\s+/).filter(w => w.length > 0).length;
+        const charCount = text.length;
+        
+        // Get selected text if any
+        let selectedText = "";
+        try {
+          const selection = context.document.getSelection();
+          selection.load("text");
+          await context.sync();
+          selectedText = selection.text;
+        } catch {
+          // No selection or error getting selection
+        }
+        
+        return {
+          fullText: text,
+          selectedText,
+          wordCount,
+          charCount,
+          estimatedTokens: Math.ceil(text.length / 4),
+          metadata: {
+            title: properties.title || "",
+            subject: properties.subject || "",
+            author: properties.author || ""
+          }
+        };
+      });
+    } catch (error) {
+      console.error("Error getting document context:", error);
+      return {
+        fullText: "",
+        selectedText: "",
+        wordCount: 0,
+        charCount: 0,
+        estimatedTokens: 0,
+        metadata: {}
+      };
+    }
+  }
 }
 
 // Export singleton instance

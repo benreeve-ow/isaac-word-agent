@@ -15,7 +15,9 @@ export interface AgentMessage {
 }
 
 export interface ToolUse {
-  tool: string;
+  id: string;
+  name: string;
+  tool?: string;
   input: any;
   result?: any;
 }
@@ -325,6 +327,190 @@ class AgentServiceClass {
       trackChanges: true,
       requireApproval: false
     });
+  }
+
+  /**
+   * New unified streaming method for all document processor modes
+   */
+  async streamAgent(
+    messages: any[],
+    documentContext: any,
+    customTools?: any[],
+    onToolUse?: (tool: any) => void,
+    onContent?: (content: string) => void,
+    onComplete?: () => void,
+    onError?: (error: Error) => void,
+    signal?: AbortSignal,
+    maxIterations?: number,
+    mode?: any
+  ): Promise<void> {
+    // Cancel any existing execution
+    this.cancelAgent();
+    
+    // Create new abort controller for this execution
+    this.currentAbortController = new AbortController();
+    const localSignal = this.currentAbortController.signal;
+    
+    try {
+      const response = await fetch(`${this.backendUrl}/api/agent/stream`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "text/event-stream"
+        },
+        body: JSON.stringify({
+          messages,
+          documentContext,
+          tools: customTools || getToolDefinitionsForAgent(),
+          mode, // Pass mode configuration to backend
+          maxIterations
+        }),
+        signal: signal || localSignal
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Server error: ${response.status} ${response.statusText}`);
+      }
+      
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error("Response body is not readable");
+      }
+      
+      const decoder = new TextDecoder();
+      let buffer = "";
+      
+      while (true) {
+        // Check if cancelled
+        if ((signal && signal.aborted) || localSignal.aborted) {
+          console.log("[AgentService] Stream cancelled");
+          if (onError) onError(new Error("Cancelled by user"));
+          break;
+        }
+        
+        const { done, value } = await reader.read();
+        
+        if (done) break;
+        
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+        
+        for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            const data = line.slice(6);
+            
+            if (data === "[DONE]") {
+              if (onComplete) onComplete();
+              this.currentAbortController = null;
+              return;
+            }
+            
+            try {
+              const message = JSON.parse(data);
+              
+              // Handle different message types
+              if (message.type === "tool_use") {
+                // Execute tool locally
+                const toolResult = await this.toolExecutor.execute(
+                  message.data.name,
+                  message.data.input,
+                  { trackChanges: true }
+                );
+                
+                // Send result back to backend
+                await this.sendToolResult(message.data.id, toolResult);
+                
+                // Notify UI
+                if (onToolUse) {
+                  onToolUse({
+                    id: message.data.id,
+                    name: message.data.name,
+                    input: message.data.input,
+                    result: toolResult
+                  });
+                }
+              } else if (message.type === "content") {
+                if (onContent) onContent(message.data.content);
+              } else if (message.type === "error") {
+                if (onError) onError(new Error(message.data.error));
+              } else if (message.type === "complete") {
+                if (onComplete) onComplete();
+              }
+            } catch (e) {
+              console.error("Failed to parse SSE message:", e);
+            }
+          }
+        }
+      }
+    } catch (error: any) {
+      if (error.name === 'AbortError') {
+        console.log("[AgentService] Request aborted");
+        if (onError) onError(new Error("Cancelled by user"));
+      } else {
+        console.error("Agent stream error:", error);
+        if (onError) onError(error);
+      }
+    } finally {
+      // Clean up abort controller
+      if (this.currentAbortController?.signal === localSignal) {
+        this.currentAbortController = null;
+      }
+    }
+  }
+
+  /**
+   * Send tool result back to backend
+   */
+  private async sendToolResult(toolUseId: string, result: any): Promise<void> {
+    try {
+      const response = await fetch(`${this.backendUrl}/api/agent/tool-result`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          toolUseId,
+          result
+        })
+      });
+      
+      if (!response.ok) {
+        console.error(`[AgentService] Failed to send tool result: ${response.status}`);
+      }
+    } catch (error) {
+      console.error(`[AgentService] Error sending tool result:`, error);
+    }
+  }
+
+  /**
+   * Process with tools (batch mode for Edit mode)
+   */
+  async processWithTools(
+    messages: any[],
+    _systemPrompt: string,
+    tools: any[],
+    documentContext: any,
+    maxIterations?: number
+  ): Promise<{ content?: string; toolUses?: any[] }> {
+    // Note: _systemPrompt will be used when we integrate with the backend
+    // For batch processing, collect all tool uses and content
+    const toolUses: any[] = [];
+    let content = "";
+    
+    await this.streamAgent(
+      messages,
+      documentContext,
+      tools,
+      (tool) => toolUses.push(tool),
+      (text) => content += text,
+      undefined,
+      undefined,
+      undefined,
+      maxIterations
+    );
+    
+    return { content, toolUses };
   }
 }
 
