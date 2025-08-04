@@ -96,6 +96,13 @@ module.exports = async (env, options) => {
     ],
     devServer: {
       hot: true,
+      liveReload: true,
+      client: {
+        overlay: {
+          errors: true,
+          warnings: false,
+        },
+      },
       headers: {
         "Access-Control-Allow-Origin": "*",
       },

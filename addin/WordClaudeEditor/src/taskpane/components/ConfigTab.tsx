@@ -14,6 +14,7 @@ import {
   SaveRegular,
   ArrowResetRegular,
 } from "@fluentui/react-icons";
+import { promptManager, PROMPT_IDS } from "../../prompts";
 
 const useStyles = makeStyles({
   container: {
@@ -111,7 +112,7 @@ const ConfigTab: React.FC = () => {
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const defaultPrompt = "You are a professional writing assistant helping to improve text in Microsoft Word documents. Focus on clarity, conciseness, and maintaining the author's voice.";
+  const defaultPrompt = promptManager.getPrompt(PROMPT_IDS.IMPROVE_DEFAULT);
 
   useEffect(() => {
     loadSettings();

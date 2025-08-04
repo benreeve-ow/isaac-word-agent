@@ -2,6 +2,8 @@
  * Service for communicating with Claude backend API
  */
 
+import { promptManager, PROMPT_IDS } from '../prompts';
+
 export interface ImproveTextRequest {
   text: string;
   contextBefore?: string;
@@ -47,12 +49,10 @@ export interface ApiError {
 
 class ClaudeService {
   private baseUrl: string;
-  private defaultSystemPrompt: string;
 
   constructor() {
     // Default to localhost, can be overridden via settings
     this.baseUrl = this.getBackendUrl();
-    this.defaultSystemPrompt = "You are a professional writing assistant helping to improve text in Microsoft Word documents. Focus on clarity, conciseness, and maintaining the author's voice.";
   }
 
   /**
@@ -96,12 +96,12 @@ class ClaudeService {
       if (typeof Office !== 'undefined' && Office.context && Office.context.document) {
         const settings = Office.context.document.settings;
         const prompt = settings.get("claudeSystemPrompt");
-        return prompt || this.defaultSystemPrompt;
+        return prompt || promptManager.getPrompt(PROMPT_IDS.IMPROVE_DEFAULT);
       }
     } catch (error) {
       console.log("Office context not available for system prompt");
     }
-    return this.defaultSystemPrompt;
+    return promptManager.getPrompt(PROMPT_IDS.IMPROVE_DEFAULT);
   }
 
   /**
