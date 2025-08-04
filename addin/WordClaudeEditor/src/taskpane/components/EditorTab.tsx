@@ -31,6 +31,17 @@ const useStyles = makeStyles({
     height: "100%",
     backgroundColor: "#ffffff",
   },
+  modeHeader: {
+    padding: "12px",
+    backgroundColor: tokens.colorNeutralBackground2,
+    borderBottom: `1px solid ${tokens.colorNeutralStroke1}`,
+  },
+  modeTitle: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    marginBottom: "4px",
+  },
   section: {
     padding: "12px",
     borderBottom: `1px solid ${tokens.colorNeutralStroke1}`,
@@ -280,6 +291,16 @@ const EditorTab: React.FC = () => {
 
   return (
     <div className={styles.container}>
+      {/* Mode Header */}
+      <div className={styles.modeHeader}>
+        <div className={styles.modeTitle}>
+          <Text size={300} weight="semibold">
+            ✏️ Edit Selection
+          </Text>
+        </div>
+        <Text size={200}>Edit selected text with AI assistance</Text>
+      </div>
+
       <div className={styles.section}>
         <Field size="small">
           <Textarea
