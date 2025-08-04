@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const AgentService = require("../services/agent-service");
+const toolResultsStore = require("../services/tool-results-store");
 
 // SSE endpoint for agent streaming
 router.post("/agent/stream", async (req, res) => {
@@ -41,7 +42,7 @@ router.post("/agent/stream", async (req, res) => {
       documentContext,
       tools, // Pass custom tools if provided
       onToolUse: async (toolUse) => {
-        // Send tool use to client with type field
+        // Send tool use to client for execution
         res.write(`data: ${JSON.stringify({
           type: "tool_use",
           data: {
@@ -51,8 +52,28 @@ router.post("/agent/stream", async (req, res) => {
           }
         })}\n\n`);
         
-        // Return a placeholder result - the actual execution happens on the client
-        return { success: true, message: "Tool executed on client" };
+        // Wait for the frontend to execute the tool and send back the result
+        const maxWaitTime = 10000; // 10 seconds max
+        const pollInterval = 100; // Check every 100ms
+        let waitedTime = 0;
+        
+        while (waitedTime < maxWaitTime) {
+          if (toolResultsStore.has(toolUse.id)) {
+            const result = toolResultsStore.retrieve(toolUse.id);
+            console.log(`[Agent] Received tool result for ${toolUse.name}`);
+            return result;
+          }
+          
+          await new Promise(resolve => setTimeout(resolve, pollInterval));
+          waitedTime += pollInterval;
+        }
+        
+        // Timeout - return a basic result
+        console.log(`[Agent] Timeout waiting for tool result ${toolUse.name}`);
+        return { 
+          success: true, 
+          message: `Tool ${toolUse.name} executed (timeout waiting for result)` 
+        };
       },
       onContent: (content) => {
         // Send content chunks with type field
@@ -84,6 +105,20 @@ router.post("/agent/stream", async (req, res) => {
     })}\n\n`);
     res.end();
   }
+});
+
+// Endpoint to receive tool results from frontend
+router.post("/agent/tool-result", (req, res) => {
+  const { toolUseId, result } = req.body;
+  
+  if (!toolUseId) {
+    return res.status(400).json({ error: "Missing toolUseId" });
+  }
+  
+  console.log(`[Agent] Storing tool result for ${toolUseId}`);
+  toolResultsStore.store(toolUseId, result);
+  
+  res.json({ success: true });
 });
 
 module.exports = router;

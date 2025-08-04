@@ -117,6 +117,31 @@ class AgentService {
       
       // === REVIEW TOOLS ===
       {
+        name: "get_comments",
+        description: "Get all comments in the document with their associated text and metadata",
+        input_schema: {
+          type: "object",
+          properties: {
+            filter_type: {
+              type: "string",
+              enum: ["all", "suggestion", "question", "issue", "praise", "general"],
+              description: "Filter comments by type",
+              default: "all"
+            },
+            include_replies: {
+              type: "boolean",
+              description: "Include comment replies/threads",
+              default: true
+            },
+            include_resolved: {
+              type: "boolean",
+              description: "Include resolved comments",
+              default: false
+            }
+          }
+        }
+      },
+      {
         name: "add_comment",
         description: "Add a review comment to selected text or specific location. IMPORTANT: Each comment must ONLY discuss the specific text it's attached to. Create multiple comments for multiple issues.",
         input_schema: {
@@ -418,9 +443,6 @@ When asked to edit or improve text:
                 currentToolUse.input = JSON.parse(currentToolUse.input);
                 allToolUses.push(currentToolUse);
                 
-                // Send tool use to client
-                await onToolUse?.(currentToolUse);
-                
                 // Check if editing is complete
                 if (currentToolUse.name === "complete_editing") {
                   onComplete?.({
@@ -455,17 +477,45 @@ When asked to edit or improve text:
                     content: assistantContent
                   });
 
+                  // Execute the tool and get the result (only call once)
+                  const toolResult = await onToolUse?.(currentToolUse);
+                  
+                  // Format the tool result for Claude
+                  let toolResultContent = "";
+                  let isError = false;
+                  
+                  if (toolResult) {
+                    if (toolResult.success === false) {
+                      isError = true;
+                      toolResultContent = toolResult.error || "Tool execution failed";
+                    } else {
+                      // Include both the message and any data
+                      if (toolResult.message) {
+                        toolResultContent = toolResult.message;
+                      }
+                      if (toolResult.data) {
+                        // Append the actual data as JSON
+                        if (toolResultContent) {
+                          toolResultContent += "\n\n";
+                        }
+                        toolResultContent += JSON.stringify(toolResult.data, null, 2);
+                      }
+                      if (!toolResultContent) {
+                        toolResultContent = "Tool executed successfully";
+                      }
+                    }
+                  } else {
+                    toolResultContent = "Tool executed";
+                  }
+                  
                   // Add tool result to continue conversation
-                  // Note: Since tools execute on the frontend, we need to wait for the result
-                  // For now, we'll assume success but should be enhanced to get actual results
                   conversationMessages.push({
                     role: "user",
                     content: [{
                       type: "tool_result",
                       tool_use_id: currentToolUse.id,
-                      content: "Tool execution requested. Continue with the next step.",
-                      // TODO: Get actual tool result from frontend
-                      is_error: false
+                      content: toolResultContent,
+                      is_error: isError
                     }]
                   });
                 }

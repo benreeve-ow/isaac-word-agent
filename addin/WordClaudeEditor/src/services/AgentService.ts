@@ -221,6 +221,35 @@ class AgentServiceClass {
                   // Log result for debugging
                   if (!result.success) {
                     console.error(`[AgentService] Tool ${message.data.name} failed:`, result.error);
+                  } else {
+                    console.log(`[AgentService] Tool ${message.data.name} succeeded`);
+                    if (result.data) {
+                      console.log(`[AgentService] Tool returned data:`, result.data);
+                    }
+                  }
+                  
+                  // Send the tool result back to the backend
+                  if (message.data.id) {
+                    try {
+                      const response = await fetch(`${this.backendUrl}/api/agent/tool-result`, {
+                        method: "POST",
+                        headers: {
+                          "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                          toolUseId: message.data.id,
+                          result: result
+                        })
+                      });
+                      
+                      if (!response.ok) {
+                        console.error(`[AgentService] Failed to send tool result: ${response.status}`);
+                      } else {
+                        console.log(`[AgentService] Tool result sent to backend for ${message.data.name}`);
+                      }
+                    } catch (error) {
+                      console.error(`[AgentService] Error sending tool result:`, error);
+                    }
                   }
                 } catch (error) {
                   console.error(`[AgentService] Tool execution error:`, error);
