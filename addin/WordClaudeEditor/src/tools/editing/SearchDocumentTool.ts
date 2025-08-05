@@ -6,7 +6,7 @@ import { BaseTool, ToolContext, ToolResult } from "../core/ToolDefinition";
 
 export class SearchDocumentTool extends BaseTool {
   name = "search_document";
-  description = "Search for text in the document and return matches with context";
+  description = "Search for text in the document and return matches with context. WARNING: This tool CANNOT see tables - use find_tables to locate tables";
   category = "search" as const;
   
   parameters = [

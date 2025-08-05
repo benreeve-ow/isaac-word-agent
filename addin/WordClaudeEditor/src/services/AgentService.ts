@@ -412,11 +412,19 @@ class AgentServiceClass {
               // Handle different message types
               if (message.type === "tool_use") {
                 // Execute tool locally
+                console.log(`[AgentService] Executing tool: ${message.data.name}`);
                 const toolResult = await this.toolExecutor.execute(
                   message.data.name,
                   message.data.input,
                   { trackChanges: true }
                 );
+                
+                console.log(`[AgentService] Tool ${message.data.name} result:`, {
+                  success: toolResult.success,
+                  hasMessage: !!toolResult.message,
+                  messageLength: toolResult.message?.length,
+                  hasData: !!toolResult.data
+                });
                 
                 // Send result back to backend
                 await this.sendToolResult(message.data.id, toolResult);
@@ -464,6 +472,15 @@ class AgentServiceClass {
    */
   private async sendToolResult(toolUseId: string, result: any): Promise<void> {
     try {
+      console.log(`[AgentService] Sending tool result for ${toolUseId}:`, {
+        success: result?.success,
+        hasMessage: !!result?.message,
+        messageLength: result?.message?.length,
+        messageSample: result?.message?.substring(0, 100),
+        hasData: !!result?.data,
+        dataKeys: result?.data ? Object.keys(result.data) : null
+      });
+      
       const response = await fetch(`${this.backendUrl}/api/agent/tool-result`, {
         method: "POST",
         headers: {
@@ -477,6 +494,8 @@ class AgentServiceClass {
       
       if (!response.ok) {
         console.error(`[AgentService] Failed to send tool result: ${response.status}`);
+      } else {
+        console.log(`[AgentService] Tool result sent successfully for ${toolUseId}`);
       }
     } catch (error) {
       console.error(`[AgentService] Error sending tool result:`, error);

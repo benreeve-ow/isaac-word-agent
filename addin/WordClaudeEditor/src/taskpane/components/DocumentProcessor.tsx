@@ -28,11 +28,13 @@ import {
   CopyRegular,
   DismissRegular,
   ArrowResetRegular,
+  BugRegular,
 } from "@fluentui/react-icons";
 import { DocumentProcessorMode } from "../../modes/types";
 import { documentProcessor } from "../../services/DocumentProcessorService";
 import { agentService, ToolUse } from "../../services/AgentService";
 import { wordService } from "../../services/WordService";
+import { DebugPanel } from "./DebugPanel";
 
 const useStyles = makeStyles({
   container: {
@@ -133,9 +135,12 @@ const useStyles = makeStyles({
   },
   contentText: {
     fontSize: "12px",
-    lineHeight: "1.5",
+    lineHeight: "1.8",
     whiteSpace: "pre-wrap",
     wordBreak: "break-word",
+    "& p": {
+      marginBottom: "12px",
+    },
   },
   statusBar: {
     padding: "8px 12px",
@@ -171,6 +176,7 @@ export const DocumentProcessor: React.FC<DocumentProcessorProps> = ({ mode }) =>
   const [error, setError] = useState<string | null>(null);
   const [expandedTools, setExpandedTools] = useState<Set<string>>(new Set());
   const [iterationCount, setIterationCount] = useState(0);
+  const [showDebug, setShowDebug] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
 
   // Reset state when mode changes
@@ -339,16 +345,34 @@ export const DocumentProcessor: React.FC<DocumentProcessorProps> = ({ mode }) =>
                   Reset
                 </Button>
               )}
+              <Button 
+                className={styles.actionButton} 
+                icon={<BugRegular />} 
+                onClick={() => setShowDebug(!showDebug)}
+                appearance="subtle"
+              >
+                Debug
+              </Button>
             </>
           ) : (
-            <Button
-              className={styles.actionButton}
-              icon={<StopRegular />}
-              onClick={handleCancel}
-              appearance="secondary"
-            >
-              Cancel
-            </Button>
+            <>
+              <Button
+                className={styles.actionButton}
+                icon={<StopRegular />}
+                onClick={handleCancel}
+                appearance="secondary"
+              >
+                Cancel
+              </Button>
+              <Button 
+                className={styles.actionButton} 
+                icon={<BugRegular />} 
+                onClick={() => setShowDebug(!showDebug)}
+                appearance="subtle"
+              >
+                Debug
+              </Button>
+            </>
           )}
         </div>
 
@@ -374,7 +398,20 @@ export const DocumentProcessor: React.FC<DocumentProcessorProps> = ({ mode }) =>
                 Copy
               </Button>
             </div>
-            <div className={styles.contentText}>{streamContent}</div>
+            <div className={styles.contentText}>
+              {streamContent.split('\n').map((paragraph, index) => {
+                // Handle empty lines as spacing
+                if (!paragraph.trim()) {
+                  return <div key={index} style={{ height: "8px" }} />;
+                }
+                // Render non-empty paragraphs
+                return (
+                  <p key={index} style={{ marginBottom: "12px", lineHeight: "1.6" }}>
+                    {paragraph}
+                  </p>
+                );
+              })}
+            </div>
           </div>
         )}
 
@@ -437,7 +474,8 @@ export const DocumentProcessor: React.FC<DocumentProcessorProps> = ({ mode }) =>
             <Text size={200}>Processing...</Text>
             {iterationCount > 0 && (
               <Text size={100} style={{ color: tokens.colorNeutralForeground3 }}>
-                Iteration {iterationCount}/{mode.maxIterations || 10}
+                Iteration {Math.min(iterationCount, mode.maxIterations || 10)}/{mode.maxIterations || 10}
+                {iterationCount > (mode.maxIterations || 10) && " (extended)"}
               </Text>
             )}
           </div>
@@ -453,6 +491,9 @@ export const DocumentProcessor: React.FC<DocumentProcessorProps> = ({ mode }) =>
           </Text>
         </div>
       )}
+
+      {/* Debug Panel */}
+      {showDebug && <DebugPanel onClose={() => setShowDebug(false)} />}
     </div>
   );
 };

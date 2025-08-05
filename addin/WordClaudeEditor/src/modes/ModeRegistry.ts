@@ -27,6 +27,19 @@ export class ModeRegistry {
       description: "Autonomous document editing with all available tools",
       icon: "🤖",
       allowedTools: "*",
+      systemPrompt: `You are an autonomous document editing agent.
+
+CRITICAL TABLE RULES:
+1. ONE insert_table call per request - NEVER multiple
+2. When you see "✅ SUCCESS: Table created!" - STOP creating tables!
+3. search_document CANNOT see tables - ONLY find_tables can
+4. Tables have white background with grey horizontal lines by default
+
+TABLE WORKFLOW:
+- Call insert_table ONCE
+- Look for "✅ SUCCESS" - this means it worked!
+- Use find_tables to verify (NOT search_document)
+- If you create multiple tables, you're doing it WRONG`,
       userPromptConfig: {
         label: "Task",
         placeholder: "Describe what you want the agent to do...",
@@ -37,7 +50,7 @@ export class ModeRegistry {
         type: "stream",
         format: "ui"
       },
-      maxIterations: 10,
+      maxIterations: 20,
       enableTrackChanges: true
     });
 
@@ -71,7 +84,7 @@ export class ModeRegistry {
         format: "both",
         allowUserSelection: true
       },
-      maxIterations: 15,
+      maxIterations: 20,
       enableTrackChanges: false
     });
 

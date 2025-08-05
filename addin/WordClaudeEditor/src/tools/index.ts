@@ -14,6 +14,9 @@ import { ApplyStyleTool } from "./formatting/ApplyStyleTool";
 import { AddCommentTool } from "./review/AddCommentTool";
 import { GetCommentsTool } from "./review/GetCommentsTool";
 import { InsertTableTool } from "./structure/InsertTableTool";
+import { EditTableTool } from "./structure/EditTableTool";
+import { DeleteTableTool } from "./structure/DeleteTableTool";
+import { FindTablesTool } from "./structure/FindTablesTool";
 import { InsertBreakTool } from "./structure/InsertBreakTool";
 import { AnalyzeStructureTool } from "./analysis/AnalyzeStructureTool";
 import { ReadFullDocumentTool } from "./analysis/ReadFullDocumentTool";
@@ -47,6 +50,9 @@ export function initializeTools(): void {
   
   // Register structure tools
   registry.register(new InsertTableTool());
+  registry.register(new EditTableTool());
+  registry.register(new DeleteTableTool());
+  registry.register(new FindTablesTool());
   registry.register(new InsertBreakTool());
   
   // Register analysis tools

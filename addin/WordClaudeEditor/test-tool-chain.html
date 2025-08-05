@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Tool Chain</title>
+    <script src="https://appsforoffice.microsoft.com/lib/1.1/hosted/office.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        button { margin: 10px; padding: 10px; background: #0078d4; color: white; border: none; cursor: pointer; }
+        .log { margin: 5px 0; padding: 5px; background: #f0f0f0; font-family: monospace; font-size: 12px; }
+        .error { background: #ffe0e0; }
+        .success { background: #e0ffe0; }
+    </style>
+</head>
+<body>
+    <h2>Test Tool Result Chain</h2>
+    
+    <button onclick="testToolChain()">Test Tool Chain</button>
+    <button onclick="clearLogs()">Clear</button>
+    
+    <div id="logs"></div>
+    
+    <script>
+        let logs = [];
+        
+        Office.initialize = function() {
+            addLog('Office initialized', 'success');
+        };
+        
+        function addLog(message, type = 'log') {
+            const logDiv = document.createElement('div');
+            logDiv.className = `log ${type}`;
+            logDiv.textContent = `${new Date().toISOString().substr(11, 8)} - ${message}`;
+            document.getElementById('logs').appendChild(logDiv);
+            console.log(message);
+        }
+        
+        function clearLogs() {
+            document.getElementById('logs').innerHTML = '';
+        }
+        
+        async function testToolChain() {
+            try {
+                addLog('Starting tool chain test...');
+                
+                // Test 1: Simple result return
+                const result1 = await testSimpleReturn();
+                addLog(`Test 1 - Simple return: ${JSON.stringify(result1)}`, result1 ? 'success' : 'error');
+                
+                // Test 2: Word.run return
+                const result2 = await testWordRunReturn();
+                addLog(`Test 2 - Word.run return: ${JSON.stringify(result2)}`, result2 ? 'success' : 'error');
+                
+                // Test 3: Simulate tool execution
+                const result3 = await simulateToolExecution();
+                addLog(`Test 3 - Tool execution: ${JSON.stringify(result3)}`, result3?.success ? 'success' : 'error');
+                
+            } catch (error) {
+                addLog(`Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testSimpleReturn() {
+            return {
+                success: true,
+                message: "Simple return works"
+            };
+        }
+        
+        async function testWordRunReturn() {
+            return await Word.run(async (context) => {
+                // Just return a result without any Word operations
+                return {
+                    success: true,
+                    message: "Word.run return works"
+                };
+            });
+        }
+        
+        async function simulateToolExecution() {
+            return await Word.run(async (context) => {
+                // Simulate what InsertTableTool does
+                const params = {
+                    rows: 2,
+                    columns: 2,
+                    position: "end"
+                };
+                
+                await context.sync();
+                
+                const successMessage = `SUCCESS: The table has been created successfully. A ${params.rows}x${params.columns} table is now at the end of the document.`;
+                
+                const result = {
+                    success: true,
+                    message: successMessage,
+                    data: {
+                        success: true,
+                        table_created: true,
+                        rows: params.rows,
+                        columns: params.columns
+                    }
+                };
+                
+                addLog(`Tool would return: ${JSON.stringify(result, null, 2)}`);
+                
+                return result;
+            });
+        }
+    </script>
+</body>
+</html>

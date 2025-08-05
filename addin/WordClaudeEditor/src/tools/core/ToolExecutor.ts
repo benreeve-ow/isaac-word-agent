@@ -60,7 +60,7 @@ export class ToolExecutor {
       }
       
       // Execute within Word context
-      return await Word.run(async (context) => {
+      const result = await Word.run(async (context) => {
         // Build tool context
         const toolContext: ToolContext = options.context || {};
         toolContext.document = context.document;
@@ -92,15 +92,54 @@ export class ToolExecutor {
         // Sync changes
         await context.sync();
         
-        console.log(`[ToolExecutor] Tool ${toolName} completed:`, result.success);
+        console.log(`[ToolExecutor] Tool ${toolName} completed:`, {
+          success: result.success,
+          message: result.message,
+          hasData: !!result.data
+        });
+        
         return result;
       });
+      
+      // Ensure we have a result
+      if (!result) {
+        console.error(`[ToolExecutor] Word.run returned null/undefined for ${toolName}`);
+        return {
+          success: false,
+          error: "Tool execution returned no result"
+        };
+      }
+      
+      return result;
     } catch (error) {
       console.error(`[ToolExecutor] Error executing tool ${toolName}:`, error);
-      return {
+      
+      // Extract error message from different error types
+      let errorMessage = "Unknown error occurred";
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (error && typeof error === 'object') {
+        // Handle RichApi errors
+        if ('debugInfo' in error && error.debugInfo) {
+          errorMessage = `${error.code || 'Error'}: ${error.debugInfo.message || error.debugInfo.code || 'Unknown error'}`;
+          if (error.debugInfo.errorLocation) {
+            errorMessage += ` at ${error.debugInfo.errorLocation}`;
+          }
+        } else if ('message' in error) {
+          errorMessage = error.message;
+        } else if ('code' in error) {
+          errorMessage = error.code;
+        }
+      }
+      
+      const result = {
         success: false,
-        error: error instanceof Error ? error.message : "Unknown error occurred"
+        error: errorMessage,
+        message: errorMessage  // Also include as message for backward compatibility
       };
+      
+      console.log(`[ToolExecutor] Returning error result:`, result);
+      return result;
     }
   }
   

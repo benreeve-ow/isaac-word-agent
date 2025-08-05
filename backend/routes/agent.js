@@ -56,7 +56,7 @@ router.post("/agent/stream", async (req, res) => {
         })}\n\n`);
         
         // Wait for the frontend to execute the tool and send back the result
-        const maxWaitTime = 10000; // 10 seconds max
+        const maxWaitTime = 30000; // 30 seconds max (increased from 10)
         const pollInterval = 100; // Check every 100ms
         let waitedTime = 0;
         
@@ -64,6 +64,7 @@ router.post("/agent/stream", async (req, res) => {
           if (toolResultsStore.has(toolUse.id)) {
             const result = toolResultsStore.retrieve(toolUse.id);
             console.log(`[Agent] Received tool result for ${toolUse.name}`);
+            console.log(`[Agent] Retrieved result:`, JSON.stringify(result, null, 2));
             return result;
           }
           
@@ -119,6 +120,25 @@ router.post("/agent/tool-result", (req, res) => {
   }
   
   console.log(`[Agent] Storing tool result for ${toolUseId}`);
+  
+  // Log the raw result
+  if (result === null) {
+    console.error(`[Agent] Tool result is NULL for ${toolUseId}`);
+  } else if (result === undefined) {
+    console.error(`[Agent] Tool result is UNDEFINED for ${toolUseId}`);
+  } else if (typeof result === 'object') {
+    console.log(`[Agent] Tool result content:`, JSON.stringify(result, null, 2));
+  } else {
+    console.error(`[Agent] Tool result has unexpected type: ${typeof result}`, result);
+  }
+  
+  // Validate the result has expected structure
+  if (!result || typeof result !== 'object') {
+    console.error(`[Agent] Invalid tool result format - storing empty result`);
+    // Store an empty result to prevent timeout
+    result = { success: false, error: "Tool result was null or invalid" };
+  }
+  
   toolResultsStore.store(toolUseId, result);
   
   res.json({ success: true });

@@ -401,17 +401,34 @@ class AgentService {
                       isError = true;
                       toolResultContent = toolResult.error || "Tool execution failed";
                     } else {
-                      // Include both the message and any data
+                      // Log for debugging
+                      console.log(`[AgentService] Tool result for ${currentToolUse.name}:`, {
+                        message: toolResult.message?.substring(0, 100) + (toolResult.message?.length > 100 ? '...' : ''),
+                        dataKeys: toolResult.data ? Object.keys(toolResult.data) : null,
+                        success: toolResult.success
+                      });
+                      
+                      // Always include the message if present
                       if (toolResult.message) {
                         toolResultContent = toolResult.message;
                       }
+                      
+                      // For table creation, emphasize the success
+                      if (currentToolUse.name === "insert_table" && toolResult.success) {
+                        // Make sure the success message is prominent
+                        if (!toolResultContent.includes("SUCCESS")) {
+                          toolResultContent = "✅ SUCCESS: " + toolResultContent;
+                        }
+                      }
+                      
                       if (toolResult.data) {
                         // Append the actual data as JSON
                         if (toolResultContent) {
-                          toolResultContent += "\n\n";
+                          toolResultContent += "\n\nAdditional details:\n";
                         }
                         toolResultContent += JSON.stringify(toolResult.data, null, 2);
                       }
+                      
                       if (!toolResultContent) {
                         toolResultContent = "Tool executed successfully";
                       }
@@ -419,6 +436,12 @@ class AgentService {
                   } else {
                     toolResultContent = "Tool executed";
                   }
+                  
+                  // Log what we're sending to Claude
+                  console.log(`[AgentService] Sending to Claude for ${currentToolUse.name}:`, {
+                    content: toolResultContent.substring(0, 200) + (toolResultContent.length > 200 ? '...' : ''),
+                    is_error: isError
+                  });
                   
                   // Add tool result to continue conversation
                   conversationMessages.push({
