@@ -189,8 +189,18 @@ export const DocumentProcessor: React.FC<DocumentProcessorProps> = ({ mode }) =>
     try {
       setError(null);
       setIsProcessing(true);
-      setToolUses([]);
-      setStreamContent("");
+      
+      // Add line breaks between separate requests
+      if (streamContent && streamContent.trim()) {
+        setStreamContent(prev => prev + "\n\n");
+        // Don't clear tool uses to maintain history
+        setToolUses(prev => prev);
+      } else {
+        // Only clear if there's no content
+        setToolUses([]);
+        setStreamContent("");
+      }
+      
       setIterationCount(0);
 
       // Validate requirements
@@ -223,11 +233,40 @@ export const DocumentProcessor: React.FC<DocumentProcessorProps> = ({ mode }) =>
         onToolUse: (tool) => {
           setToolUses((prev) => [...prev, tool]);
           setIterationCount((prev) => prev + 1);
+          // Add line breaks before new content after tool use
+          if (streamContent) {
+            setStreamContent((prev) => prev + "\n\n");
+          }
         },
         onContent: (content) => {
-          setStreamContent((prev) => prev + content);
+          setStreamContent((prev) => {
+            // Check if this looks like the start of a new paragraph/thought
+            const trimmedContent = content.trim();
+            const prevEndsWithPeriod = prev.trim().endsWith('.');
+            const startsWithCapital = /^[A-Z]/.test(trimmedContent);
+            
+            // Common sentence starters that indicate a new thought
+            const sentenceStarters = [
+              'Perfect!', 'Great!', 'Done!', 'Excellent!',
+              'Now', 'Next', 'The', 'I\'ve', 'I\'ll', 'Let me',
+              'Here', 'This', 'That', 'These', 'Those',
+              'However', 'Additionally', 'Furthermore',
+              'Note:', 'Important:', 'Tip:', 'Warning:'
+            ];
+            
+            const isNewThought = prevEndsWithPeriod && 
+                                startsWithCapital && 
+                                sentenceStarters.some(starter => trimmedContent.startsWith(starter));
+            
+            if (prev && isNewThought) {
+              return prev + "\n\n" + content;
+            }
+            return prev + content;
+          });
         },
         onComplete: () => {
+          // Add line breaks after each complete response
+          setStreamContent((prev) => prev + "\n\n");
           setIsProcessing(false);
         },
         onError: (error) => {
