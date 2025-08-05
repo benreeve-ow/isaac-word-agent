@@ -13,7 +13,10 @@ import {
   PARAGRAPH_FORMATTING,
   TRACK_CHANGES,
   ERROR_HANDLING,
-  COMMENT_SPECIFICITY_CONSTRAINT
+  COMMENT_SPECIFICITY_CONSTRAINT,
+  TABLE_HANDLING,
+  NO_MARKDOWN,
+  ADDRESS_COMMENTS
 } from '../components/SharedComponents';
 
 export const AGENT_SYSTEM_PROMPT: PromptTemplate = {
@@ -57,6 +60,8 @@ When asked to edit or improve text:
     SEARCH_LENGTH_CONSTRAINT,
     EDIT_SIZE_CONSTRAINT,
     COMMENT_SPECIFICITY_CONSTRAINT,
+    TABLE_HANDLING,
+    NO_MARKDOWN,
     
     // Formatting guidelines
     PRESERVE_FORMATTING,
@@ -65,6 +70,7 @@ When asked to edit or improve text:
     // Additional context
     TRACK_CHANGES,
     ERROR_HANDLING,
+    ADDRESS_COMMENTS,
     
     // Tool-specific examples
     {

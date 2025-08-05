@@ -37,9 +37,9 @@ export class InsertTableTool extends BaseTool {
     {
       name: "position",
       type: "string" as const,
-      description: "Where to insert the table relative to cursor or search result",
+      description: "Where to insert the table. Use 'after_paragraph' with search_text to insert after specific text. NEVER use 'cursor' as it inserts at random location.",
       enum: ["cursor", "end", "after_paragraph", "before_paragraph", "replace_selection"],
-      default: "cursor"
+      required: true
     },
     {
       name: "search_text",
@@ -143,12 +143,11 @@ export class InsertTableTool extends BaseTool {
         break;
     }
     
-    // Insert the table - insertTable only accepts 'before' or 'after'
+    // Insert the table with the appropriate method
     let finalInsertMethod: Word.InsertLocation.before | Word.InsertLocation.after;
     if (insertionMethod === Word.InsertLocation.before) {
       finalInsertMethod = Word.InsertLocation.before;
     } else {
-      // Default to 'after' for all other cases (including replace, end, etc.)
       finalInsertMethod = Word.InsertLocation.after;
     }
     
@@ -157,6 +156,15 @@ export class InsertTableTool extends BaseTool {
       params.columns,
       finalInsertMethod
     );
+    
+    // Now add spacing AROUND the table after it's created
+    // Add paragraph BEFORE the table
+    const beforePara = table.insertParagraph("", Word.InsertLocation.before);
+    
+    // Add paragraph AFTER the table  
+    const afterPara = table.insertParagraph("", Word.InsertLocation.after);
+    
+    await context.document.context.sync();
     
     // Load the table first
     context.document.context.load(table);
@@ -180,27 +188,7 @@ export class InsertTableTool extends BaseTool {
     // Apply custom border and background settings
     await this.applyTableStyling(table, params, context);
     
-    // Format header row with minimal styling
-    if (params.header_row) {
-      table.headerRowCount = 1;
-      const headerRow = table.rows.getFirst();
-      
-      // Use very light gray or no background
-      // Don't add background color for minimal look
-      // headerRow.shadingColor = "#F5F5F5"; // Commented out for cleaner look
-      
-      // Make header text bold - this is sufficient for headers
-      const headerCells = headerRow.cells;
-      context.document.context.load(headerCells, "items");
-      await context.document.context.sync();
-      
-      for (const cell of headerCells.items) {
-        const cellRange = cell.body.getRange();
-        cellRange.font.bold = true;
-      }
-    }
-    
-    // Populate with data if provided
+    // Populate with data if provided BEFORE formatting header
     if (params.data && Array.isArray(params.data)) {
       context.document.context.load(table.rows, "items");
       await context.document.context.sync();
@@ -222,6 +210,44 @@ export class InsertTableTool extends BaseTool {
       }
       // Sync after populating data
       await context.document.context.sync();
+    }
+    
+    // Format header row AFTER data has been inserted
+    if (params.header_row) {
+      table.headerRowCount = 1;
+      const headerRow = table.rows.getFirst();
+      
+      // Make header text bold - this is sufficient for headers
+      const headerCells = headerRow.cells;
+      context.document.context.load(headerCells, "items");
+      await context.document.context.sync();
+      
+      for (const cell of headerCells.items) {
+        const cellRange = cell.body.getRange();
+        cellRange.font.bold = true;
+        // Ensure non-header cells are not bold
+        if (params.data && Array.isArray(params.data) && params.data.length > 1) {
+          // This cell was just formatted as bold for header
+        }
+      }
+      
+      // Ensure non-header rows are not bold
+      if (params.data && Array.isArray(params.data) && params.data.length > 1) {
+        context.document.context.load(table.rows, "items");
+        await context.document.context.sync();
+        
+        // Start from row 1 (skip header row at index 0)
+        for (let i = 1; i < table.rows.items.length; i++) {
+          const row = table.rows.items[i];
+          context.document.context.load(row.cells, "items");
+          await context.document.context.sync();
+          
+          for (const cell of row.cells.items) {
+            const cellRange = cell.body.getRange();
+            cellRange.font.bold = false;
+          }
+        }
+      }
     }
     
     await context.document.context.sync();

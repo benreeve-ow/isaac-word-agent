@@ -104,3 +104,39 @@ export const AGENT_PRINCIPLES: PromptComponent = {
 4. **Know When to Stop**: Use complete_editing when finished
 5. **Focus on Accuracy**: Better to make correct edits than many edits`
 };
+
+// ============ TABLE HANDLING ============
+export const TABLE_HANDLING: PromptComponent = {
+  type: 'constraint',
+  content: `**CRITICAL TABLE HANDLING RULES**:
+- Word API Bug: insert_content near tables ALWAYS goes into table cells
+- ALWAYS use find_tables first to check for existing tables
+- If tables exist near your target, use edit_content to REPLACE text instead
+- Replacement formula: old_text → old_text + "\\n\\n" + new_content
+- If text ends up in table cells, immediately fix by replacing the original paragraph`,
+  priority: 10 // Critical constraint
+};
+
+// ============ NO MARKDOWN FORMATTING ============
+export const NO_MARKDOWN: PromptComponent = {
+  type: 'constraint', 
+  content: `**ABSOLUTELY NO MARKDOWN - THIS IS MICROSOFT WORD**:
+- NEVER use **text** for bold → Use format_text with bold=true
+- NEVER use *text* for italic → Use format_text with italic=true
+- NEVER use # for headings → Use apply_style or format_text
+- NEVER use markdown tables → Use insert_table tool
+- Insert PLAIN TEXT ONLY, then format separately with format_text tool
+- Example: Insert "Title" as plain text, THEN use format_text to make it bold`,
+  priority: 10 // Critical constraint
+};
+
+// ============ ADDRESSING COMMENTS ============
+export const ADDRESS_COMMENTS: PromptComponent = {
+  type: 'instruction',
+  content: `**WHEN ADDRESSING REVIEWER COMMENTS**:
+- ALWAYS update the original problematic text that the comment refers to
+- Use edit_content to modify the sentence/paragraph the comment is attached to
+- Don't just add new content - fix the underlying issue
+- Example: If comment says "inadequate differentiation", replace the text that lacks differentiation`,
+  priority: 8
+};

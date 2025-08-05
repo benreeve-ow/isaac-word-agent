@@ -19,8 +19,8 @@ export class InsertContentTool extends BaseTool {
     {
       name: "position",
       type: "string" as const,
-      description: "Where to insert the content",
-      enum: ["beginning", "end", "after_text", "before_text", "after_selection", "before_selection"],
+      description: "Where to insert the content. 'after_text' inserts after the paragraph containing the reference. 'next_paragraph' finds the next paragraph after reference.",
+      enum: ["beginning", "end", "after_text", "before_text", "after_selection", "before_selection", "next_paragraph"],
       required: true
     },
     {
@@ -112,6 +112,43 @@ export class InsertContentTool extends BaseTool {
         } else {
           // For before_text, insert at the start of the reference
           insertLocation = referenceRange.getRange(Word.RangeLocation.start);
+        }
+        break;
+        
+      case "next_paragraph":
+        if (!params.reference_text) {
+          return this.createErrorResult("Reference text required for next_paragraph position");
+        }
+        
+        const nextSearchResults = body.search(params.reference_text, {
+          matchCase: false,
+          matchWholeWord: false
+        });
+        
+        context.document.context.load(nextSearchResults, "items");
+        await context.document.context.sync();
+        
+        if (nextSearchResults.items.length === 0) {
+          return this.createErrorResult("Reference text not found");
+        }
+        
+        const nextReferenceRange = nextSearchResults.items[0];
+        const containingParagraph = nextReferenceRange.paragraphs.getFirst();
+        
+        // Get the next paragraph after this one
+        const nextParagraph = containingParagraph.getNext();
+        
+        if (nextParagraph.isNullObject) {
+          // No next paragraph, insert at end of document
+          insertLocation = body.getRange(Word.RangeLocation.end);
+        } else {
+          // Insert at the start of the next paragraph
+          insertLocation = nextParagraph.getRange(Word.RangeLocation.start);
+        }
+        
+        // Add line breaks to create buffer
+        if (!contentToInsert.startsWith('\n')) {
+          contentToInsert = '\n\n' + contentToInsert;
         }
         break;
     }
