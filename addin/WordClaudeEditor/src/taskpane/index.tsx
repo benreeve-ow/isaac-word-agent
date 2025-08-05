@@ -6,7 +6,7 @@ import { minimalLightTheme } from "../theme/minimalTheme";
 
 /* global document, Office, module, require, HTMLElement */
 
-const title = "DNAgent";
+const title = "Isaac";
 
 // Add error handling for debugging
 window.onerror = function(msg, url, lineNo, columnNo, error) {

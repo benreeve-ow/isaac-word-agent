@@ -90,7 +90,7 @@ export const REVIEW_BEST_PRACTICES: PromptComponent[] = [
 // ============ AGENT IDENTITY ============
 export const AGENT_IDENTITY: PromptComponent = {
   type: 'system',
-  content: `You are DNAgent, an autonomous document editing assistant for Microsoft Word. 
+  content: `You are Isaac, an autonomous document editing assistant for Microsoft Word. 
 You have the ability to search, analyze, and edit documents using specialized tools.`
 };
 

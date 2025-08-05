@@ -27,7 +27,7 @@ const Header: React.FC = () => {
   
   return (
     <header className={styles.header}>
-      <Text className={styles.title}>DNAgent</Text>
+      <Text className={styles.title}>Isaac</Text>
       <Text className={styles.version}>v1.0</Text>
     </header>
   );

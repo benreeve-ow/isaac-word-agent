@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>DNAgent Icon Generator</title>
+    <title>Isaac Icon Generator</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -22,7 +22,7 @@
     </style>
 </head>
 <body>
-    <h1>DNAgent Icon Generator</h1>
+    <h1>Isaac Icon Generator</h1>
     <p>Right-click each icon and save as PNG to the assets folder</p>
     
     <div id="icons"></div>
@@ -63,7 +63,7 @@
             ctx.closePath();
             ctx.fill();
             
-            // White "DN" text
+            // White "I" text
             ctx.fillStyle = '#ffffff';
             ctx.font = `bold ${size * 0.35}px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
             ctx.textAlign = 'center';
@@ -72,9 +72,9 @@
             // For smaller sizes, just use "D"
             if (size <= 16) {
                 ctx.font = `bold ${size * 0.55}px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
-                ctx.fillText('D', size / 2, size / 2);
+                ctx.fillText('I', size / 2, size / 2);
             } else {
-                ctx.fillText('DN', size / 2, size / 2);
+                ctx.fillText('I', size / 2, size / 2);
             }
             
             const label = document.createElement('div');
