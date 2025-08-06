@@ -1,8 +1,8 @@
-# Word Claude Editor - Backend
+# Isaac Backend Server
 
-Express.js backend server that provides Claude AI integration for the Word add-in.
+Express.js backend that provides Claude AI integration for the Isaac Word add-in.
 
-## Setup
+## 🚀 Quick Start
 
 ### 1. Install Dependencies
 
@@ -12,216 +12,252 @@ npm install
 
 ### 2. Configure Environment
 
-Copy the example environment file and add your API key:
+Create a `.env` file with your Anthropic API key:
 
 ```bash
-cp .env.example .env
+echo "ANTHROPIC_API_KEY=sk-ant-api-your-key-here" > .env
 ```
 
-Edit `.env` and add your Anthropic API key:
+Optional environment variables:
 ```env
-ANTHROPIC_API_KEY=sk-ant-api03-...
-PORT=3000
-NODE_ENV=development
+PORT=3000               # Server port (default: 3000)
+NODE_ENV=development    # Environment mode
 ```
 
 ### 3. Start the Server
 
-Development mode (with auto-reload):
 ```bash
-npm run dev
-```
-
-Production mode:
-```bash
+# Production mode (HTTPS)
 npm start
+
+# Development mode (with auto-reload)
+npm run dev
+
+# HTTP mode (if HTTPS certificate issues)
+npm run start:http
 ```
 
-## API Documentation
+The server runs on `https://localhost:3000` by default with Office add-in certificates.
+
+## 📡 API Endpoints
 
 ### Health Check
 
-**GET** `/health`
-
-Returns server status.
-
 ```bash
-curl http://localhost:3000/health
+GET /health
 ```
 
-### Improve Text
+Returns server status and version info.
 
-**POST** `/api/claude/improve`
-
-Improves text with AI assistance.
+### Text Improvement
 
 ```bash
-curl -X POST http://localhost:3000/api/claude/improve \
-  -H "Content-Type: application/json" \
-  -d '{
-    "text": "This is text that needs improvement.",
-    "contextBefore": "Previous paragraph for context.",
-    "contextAfter": "Following paragraph for context.",
-    "systemPrompt": "You are a helpful writing assistant.",
-    "stylePrompt": "Write in a professional, concise style."
-  }'
+POST /api/claude/improve
+```
+
+Improves text using Claude with custom instructions.
+
+**Request Body:**
+```json
+{
+  "text": "Text to improve",
+  "contextBefore": "Previous paragraph",
+  "contextAfter": "Following paragraph",
+  "userPrompt": "Make it more concise",
+  "systemPrompt": "You are a helpful editor"
+}
 ```
 
 ### Implement Comment
 
-**POST** `/api/claude/implement-comment`
-
-Implements reviewer comments on text.
-
 ```bash
-curl -X POST http://localhost:3000/api/claude/implement-comment \
-  -H "Content-Type: application/json" \
-  -d '{
-    "text": "Original text here.",
-    "comment": "Please make this more concise",
-    "context": "This is part of a technical document",
-    "systemPrompt": "You are a helpful editor."
-  }'
+POST /api/claude/implement-comment
 ```
 
-### Analyze Style
+Applies reviewer comments to text.
 
-**POST** `/api/claude/analyze-style`
-
-Analyzes writing style from a sample.
-
-```bash
-curl -X POST http://localhost:3000/api/claude/analyze-style \
-  -H "Content-Type: application/json" \
-  -d '{
-    "sampleText": "Long sample of text to analyze for style...",
-    "sampleSize": 500
-  }'
-```
-
-## Error Handling
-
-The API returns appropriate HTTP status codes:
-
-- `200` - Success
-- `400` - Bad Request (missing parameters, token limit exceeded)
-- `429` - Rate Limited
-- `500` - Server Error
-
-Error response format:
+**Request Body:**
 ```json
 {
-  "error": "Error message",
-  "details": "Additional details (dev mode only)",
-  "estimatedTokens": 12345,
-  "maxTokens": 150000
+  "text": "Original text",
+  "comment": "Reviewer's comment",
+  "context": "Document context",
+  "systemPrompt": "System instructions"
 }
 ```
 
-## Token Limits
+### Style Analysis
 
-- Maximum combined tokens: 150,000
-- Token estimation: characters / 4
-- Includes text, context, and prompts
+```bash
+POST /api/claude/analyze-style
+```
 
-## Development
+Analyzes writing style from a document sample.
 
-### Project Structure
+**Request Body:**
+```json
+{
+  "sampleText": "Sample text for analysis",
+  "sampleSize": 1000
+}
+```
+
+### Agent Streaming
+
+```bash
+POST /api/agent/stream
+```
+
+Streams agent responses with tool usage via Server-Sent Events (SSE).
+
+**Request Body:**
+```json
+{
+  "messages": [{"role": "user", "content": "Task description"}],
+  "documentContext": "Current document content",
+  "tools": [/* Tool definitions from frontend */]
+}
+```
+
+**Response:** Server-Sent Events stream with:
+- `tool_use` - Tool execution requests
+- `content` - Text responses
+- `error` - Error messages
+- `done` - Completion signal
+
+## 🏗️ Architecture
+
+### Directory Structure
 
 ```
 backend/
-├── server.js           # Express server setup
+├── server-https.js      # HTTPS server (default)
+├── server-http.js       # HTTP server (fallback)
 ├── routes/
-│   └── claude.js      # API route handlers
+│   ├── claude.js        # Text improvement endpoints
+│   └── agent.js         # Agent streaming endpoint
 ├── services/
-│   └── anthropic.js   # Claude API integration
+│   ├── anthropic.js     # Claude API client
+│   └── agent-service.js # Agent orchestration
 ├── utils/
-│   └── tokenCounter.js # Token estimation
-├── .env.example       # Environment template
-└── package.json       # Dependencies
+│   └── tokenCounter.js  # Token estimation
+└── certificates/        # HTTPS certificates
 ```
 
-### Available Scripts
+### Key Features
 
-- `npm start` - Start production server
-- `npm run dev` - Start development server with nodemon
+- **HTTPS by Default**: Uses Office add-in certificates
+- **Streaming Support**: Real-time agent responses via SSE
+- **Token Management**: Automatic token counting and limits
+- **Error Handling**: Comprehensive error responses
+- **CORS Configuration**: Proper headers for Word add-in
 
-### Dependencies
+## 🔧 Configuration
 
-- `express` - Web framework
-- `cors` - CORS middleware
-- `dotenv` - Environment variables
-- `@anthropic-ai/sdk` - Claude API client
+### Token Limits
 
-## Testing
+- Maximum context: 150,000 tokens
+- Model: Claude 3.5 Sonnet
+- Token estimation: ~4 characters per token
 
-### Manual Testing with cURL
+### CORS Settings
 
-Test the health endpoint:
+Configured to accept requests from:
+- `https://localhost:3001` (development)
+- `https://localhost:3000` (self-requests)
+
+### SSL Certificates
+
+The server uses Office add-in development certificates located in:
+```
+~/.office-addin-dev-certs/
+```
+
+If certificates are missing, they'll be generated automatically.
+
+## 🐛 Troubleshooting
+
+### Certificate Issues
+
+If you see certificate warnings:
+1. Visit `https://localhost:3000/health` in your browser
+2. Accept the security warning
+3. Restart the server
+
+### Port Already in Use
+
 ```bash
-curl http://localhost:3000/health
+# Find process using port 3000
+lsof -i :3000
+
+# Kill the process
+kill -9 <PID>
 ```
 
-Test text improvement:
+### API Key Issues
+
+- Ensure the key starts with `sk-ant-api`
+- Check key validity in Anthropic Console
+- Verify `.env` file is in the backend directory
+
+### CORS Errors
+
+If the add-in can't connect:
+1. Check the origin header matches `https://localhost:3001`
+2. Ensure credentials are included in requests
+3. Verify HTTPS is running (not HTTP)
+
+## 📊 Monitoring
+
+### Request Logging
+
+All requests are logged with:
+- Timestamp
+- Method and path
+- Response time
+- Status code
+
+### Error Tracking
+
+Errors include:
+- Error message
+- Stack trace (development mode)
+- Token usage (if applicable)
+
+## 🚀 Production Deployment
+
+For production deployment:
+
+1. Set `NODE_ENV=production`
+2. Use proper SSL certificates
+3. Configure firewall rules
+4. Set up monitoring
+5. Implement rate limiting
+6. Add request validation
+
+## 📝 Development
+
+### Running Tests
+
 ```bash
-curl -X POST http://localhost:3000/api/claude/improve \
-  -H "Content-Type: application/json" \
-  -d '{"text": "Test text"}'
+# No tests configured yet
+npm test
 ```
 
-### Testing with Postman
+### Adding New Endpoints
 
-Import the following collection:
+1. Create route file in `routes/`
+2. Add service logic in `services/`
+3. Register route in `server-https.js`
+4. Update this README
 
-```json
-{
-  "info": {
-    "name": "Word Claude Editor API"
-  },
-  "item": [
-    {
-      "name": "Health Check",
-      "request": {
-        "method": "GET",
-        "url": "http://localhost:3000/health"
-      }
-    },
-    {
-      "name": "Improve Text",
-      "request": {
-        "method": "POST",
-        "url": "http://localhost:3000/api/claude/improve",
-        "body": {
-          "mode": "raw",
-          "raw": {
-            "text": "This is some text to improve.",
-            "systemPrompt": "You are a helpful assistant."
-          }
-        }
-      }
-    }
-  ]
-}
+### Debugging
+
+Enable debug logging:
+```bash
+DEBUG=* npm run dev
 ```
 
-## Troubleshooting
+---
 
-### Server won't start
-- Check if port 3000 is already in use
-- Verify .env file exists and has valid API key
-- Check Node.js version (16+ required)
-
-### API key errors
-- Ensure ANTHROPIC_API_KEY is set in .env
-- Verify the key starts with `sk-ant-`
-- Check key permissions and validity
-
-### CORS errors
-- Verify origin is `https://localhost:3001`
-- Check CORS configuration in server.js
-- Ensure credentials are included in requests
-
-### Rate limiting
-- Implement exponential backoff
-- Monitor usage in Anthropic dashboard
-- Consider caching frequent requests
+Built with Express.js and Claude AI SDK

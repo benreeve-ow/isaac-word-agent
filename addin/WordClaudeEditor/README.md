@@ -1,192 +1,236 @@
-# Word Claude Editor Add-in
+# Isaac Word Add-in
 
-A Microsoft Word add-in that integrates Claude AI to help improve your writing with intelligent suggestions, style matching, and automated comment implementation.
+Microsoft Word add-in component of Isaac - an intelligent document assistant powered by Claude AI.
 
-## Features
+## ✨ Features
 
-### Editor Tab
-- **Improve Selected Text**: Select text in your document and get AI-powered improvements
-- **Real-time feedback**: Get explanations for suggested changes
-- **Context awareness**: Uses surrounding text for better suggestions
+### Multiple Processing Modes
 
-### Config Tab
-- **Custom system prompts**: Configure how Claude should assist with your writing
-- **Style matching**: Enable automatic analysis and matching of your document's style
-- **Backend configuration**: Set the URL for your Claude backend server
-- **Persistent settings**: Configuration is saved per document
+- **Agent Mode** 🤖
+  - Autonomous document editing with natural language instructions
+  - Access to 15+ specialized tools
+  - Real-time progress tracking
+  
+- **Review Mode** 📝
+  - Comprehensive document analysis
+  - Smart commenting system
+  - Grammar, style, and structure feedback
+  
+- **Edit Mode** ✏️
+  - Direct text improvements
+  - Custom instructions support
+  - Context-aware suggestions
 
-## Quick Start
+### Advanced Capabilities
+
+- **Track Changes Integration**: All edits tracked with Word's revision system
+- **Style Matching**: Analyzes and matches document writing style
+- **Tool System**: Modular architecture with specialized document tools
+- **Debug Console**: Built-in debugging for troubleshooting
+- **Real-time Streaming**: See Isaac's thinking process in real-time
+
+## 🚀 Quick Start
 
 ### Prerequisites
-- Microsoft Word (Desktop or Web)
+
+- Microsoft Word (Desktop or Office 365)
 - Node.js 16+ and npm
-- Claude backend server running (see backend README)
+- Backend server running (see backend README)
 
 ### Installation
 
-1. **Install dependencies**:
-   ```bash
-   npm install
-   ```
-
-2. **Start development server**:
-   ```bash
-   npm start
-   ```
-
-3. **Sideload the add-in**:
-   - The add-in will automatically open in Word with debugging enabled
-   - If not, manually sideload using the manifest.xml file
-
-### Development Mode
-
 ```bash
-# Start development server with hot reload
+# Install dependencies
+npm install
+
+# Start development and load in Word
 npm start
-
-# Build for production
-npm run build
-
-# Run TypeScript compiler
-npm run build:dev
-
-# Start development server only
-npm run dev-server
 ```
 
-## Project Structure
+This will:
+1. Start webpack dev server on `https://localhost:3001`
+2. Open Microsoft Word
+3. Automatically sideload Isaac
+
+## 🏗️ Architecture
+
+### Directory Structure
 
 ```
 src/
-├── taskpane/
-│   ├── components/
-│   │   ├── App.tsx          # Main app with tab navigation
-│   │   ├── EditorTab.tsx    # Text improvement interface
-│   │   ├── ConfigTab.tsx    # Configuration settings
-│   │   └── Header.tsx       # App header component
-│   ├── index.tsx            # Task pane entry point
-│   ├── taskpane.html        # Task pane HTML template
-│   └── taskpane.ts          # Task pane initialization
-├── commands/
-│   ├── commands.html        # Commands HTML template
-│   └── commands.ts          # Ribbon commands
-assets/                      # Icons and images
-manifest.xml                 # Add-in manifest
+├── tools/                    # Tool implementations
+│   ├── core/                 # Tool registry and base classes
+│   ├── editing/              # Text manipulation tools
+│   ├── formatting/           # Style and format tools
+│   ├── structure/            # Document structure tools
+│   ├── review/               # Comment and review tools
+│   └── analysis/             # Document analysis tools
+├── modes/                    # Processing modes
+│   ├── ModeRegistry.ts       # Mode management
+│   └── types.ts              # Mode definitions
+├── prompts/                  # AI prompt system
+│   ├── components/           # Reusable prompt parts
+│   ├── system/               # System prompts
+│   └── core/                 # Prompt builder
+├── services/                 # Core services
+│   ├── WordService.ts        # Word API wrapper
+│   ├── ClaudeService.ts      # Backend communication
+│   ├── AgentService.ts       # Agent orchestration
+│   └── DocumentProcessor.ts  # Unified processor
+├── taskpane/                 # UI components
+│   ├── components/           # React components
+│   └── index.tsx             # Entry point
+└── theme/                    # UI theming
 ```
 
-## Configuration
+### Tool System
 
-### Default Settings
-- **System Prompt**: Professional writing assistant focused on clarity and conciseness
-- **Style Matching**: Enabled
-- **Backend URL**: `http://localhost:3000`
+Isaac's tools are modular TypeScript classes that:
+- Extend `BaseTool` for consistent interface
+- Define parameters with TypeScript types
+- Execute within Word's context
+- Return structured results
 
-### Customization
-1. Open the **Config** tab in the add-in
-2. Modify the system prompt to change Claude's behavior
-3. Enable/disable style matching based on your needs
-4. Update backend URL if running on a different port
-5. Click **Save Configuration** to persist changes
+Example tool structure:
+```typescript
+export class SearchDocumentTool extends BaseTool {
+  name = "search_document";
+  description = "Search for text in the document";
+  category = "search" as const;
+  
+  parameters = [
+    { name: "pattern", type: "string", required: true },
+    { name: "max_results", type: "number", default: 10 }
+  ];
+  
+  async execute(params: any, context: ToolContext): Promise<ToolResult> {
+    // Implementation using Word.js APIs
+  }
+}
+```
 
-## Integration with Backend
+## 🛠️ Available Scripts
 
-The add-in communicates with the Express.js backend server:
+```bash
+npm start           # Start dev server and load in Word
+npm run dev-server  # Dev server only (no Word loading)
+npm run build       # Production build
+npm run lint        # Run ESLint
+npm run validate    # Validate manifest.xml
+npm run stop        # Stop debugging session
+```
 
-- **Endpoint**: `POST /api/claude/improve`
-- **CORS**: Backend must allow `https://localhost:3001`
-- **Authentication**: API key handled server-side
+## 🔧 Configuration
 
-## Troubleshooting
+### Document Settings
+
+Each document stores its own settings:
+- System prompts
+- Style preferences
+- Mode configurations
+
+Access via the Config tab in the add-in.
+
+### Development Settings
+
+Configure in `config` object in package.json:
+```json
+{
+  "app_to_debug": "word",
+  "app_type_to_debug": "desktop",
+  "dev_server_port": 3001
+}
+```
+
+## 🐛 Debugging
+
+### Built-in Debug Console
+
+The debug console shows:
+- Tool executions with parameters
+- API calls and responses
+- Error messages and stack traces
+- Performance metrics
+
+### Browser DevTools
+
+1. Open DevTools in the task pane
+2. Check Console for logs
+3. Monitor Network tab for API calls
+4. Use Sources for breakpoints
 
 ### Common Issues
 
-1. **Add-in not loading**:
-   - Ensure development server is running on `https://localhost:3001`
-   - Accept self-signed certificate warnings
-   - Check browser console for errors
+**Add-in not loading**
+- Clear Word cache: `rm -rf ~/Library/Containers/com.microsoft.Word/Data/Documents/wef`
+- Accept HTTPS certificate at `https://localhost:3001`
+- Check manifest.xml is valid
 
-2. **API errors**:
-   - Verify backend server is running on configured URL
-   - Check CORS settings in backend
-   - Ensure API key is properly configured in backend
+**API Connection Failed**
+- Verify backend is running on `https://localhost:3000`
+- Check CORS configuration
+- Ensure `.env` file exists in backend
 
-3. **TypeScript errors**:
-   - Run `npm run build` to check for compilation errors
-   - Ensure all dependencies are installed
+**Tool Execution Errors**
+- Check Word.run context is properly handled
+- Verify tool parameters match definitions
+- Review debug console for details
 
-4. **Manifest issues**:
-   - Validate manifest.xml using Office Add-in Validator
-   - Check that all URLs in manifest are accessible
+## 🎨 UI Components
 
-### Development Tips
+### Main Components
 
-- Use browser DevTools to debug the task pane
-- Check Word's add-in debugging tools
-- Monitor network requests in DevTools
-- Use `console.log()` for debugging (visible in DevTools)
+- **App.tsx**: Root component with navigation
+- **DocumentProcessor.tsx**: Unified mode handler
+- **EditorTab.tsx**: Mode selection and execution
+- **DebugConsole.tsx**: Real-time debugging output
 
-## Available Scripts
+### Theming
 
-- `npm start` - Start development with sideloading
-- `npm run build` - Build for production
-- `npm run build:dev` - Development build with TypeScript compilation
-- `npm run dev-server` - Start webpack dev server only
-- `npm run stop` - Stop development server and clear cache
+Uses Fluent UI with custom minimal theme:
+- Dark header with Isaac branding
+- Clean, professional interface
+- Responsive design for various pane sizes
 
-## API Integration
+## 📡 Backend Integration
 
-### Text Improvement Flow
+### API Communication
 
-1. User selects text in Word document
-2. Add-in captures selection using Office.js
-3. Text and context sent to backend API
-4. Claude processes and returns improvements
-5. User reviews and accepts/rejects changes
-6. Changes applied using Word's track changes feature
+- Base URL: `https://localhost:3000`
+- Authentication: API key on backend
+- Format: JSON with streaming support
 
-### Error Handling
+### Endpoints Used
 
-- Network failures are handled gracefully
-- User feedback provided for all operations
-- Fallback to default behavior on errors
+- `POST /api/claude/improve` - Text improvements
+- `POST /api/claude/analyze-style` - Style analysis
+- `POST /api/agent/stream` - Agent streaming
+- `GET /health` - Health check
 
-## Building for Production
+## 🚀 Production Build
 
-1. **Build the add-in**:
-   ```bash
-   npm run build
-   ```
+```bash
+# Build for production
+npm run build
 
-2. **Deploy to web server**:
-   - Copy `dist/` folder contents to your web server
-   - Update manifest.xml URLs to production domains
-   - Ensure HTTPS is enabled
+# Output in dist/ folder
+# Update manifest.xml URLs for production
+# Deploy to HTTPS-enabled server
+```
 
-3. **Distribute**:
-   - Share manifest.xml with users
-   - Or publish to Office Store
+## 🔒 Security
 
-## Security Considerations
+- No API keys in client code
+- HTTPS required for Office add-ins
+- Input sanitization
+- Secure communication with backend
 
-- API key stored server-side only
-- No sensitive data in client-side code
-- CORS properly configured
-- Input validation on all user data
+## 📚 Resources
 
-## Contributing
+- [Office.js Documentation](https://docs.microsoft.com/en-us/office/dev/add-ins/reference/javascript-api-for-office)
+- [Word API Reference](https://docs.microsoft.com/en-us/javascript/api/word)
+- [Fluent UI React](https://developer.microsoft.com/en-us/fluentui)
 
-1. Fork the repository
-2. Create a feature branch
-3. Make changes and test thoroughly
-4. Submit a pull request
+---
 
-## Support
-
-For issues and questions:
-- Check the troubleshooting section
-- Review browser console for errors
-- Open a GitHub issue with detailed information
-
-## License
-
-MIT
+Part of the Isaac Document Assistant ecosystem
