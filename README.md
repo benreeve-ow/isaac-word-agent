@@ -401,14 +401,3 @@ For production deployment:
 ## 📄 License
 
 MIT License - see LICENSE file for details
-
-## 🙏 Acknowledgments
-
-- Built with Claude AI (Anthropic)
-- Powered by Mastra framework
-- Uses Office.js and Fluent UI
-- React and TypeScript
-
----
-
-Built with ❤️ using Claude AI, Mastra, React, TypeScript, and Office.js
