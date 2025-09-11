@@ -4,7 +4,7 @@ const AgentService = require("../services/agent-service");
 const toolResultsStore = require("../services/tool-results-store");
 
 // SSE endpoint for agent streaming
-router.post("/agent/stream", async (req, res) => {
+router.post("/stream", async (req, res) => {
   // Set up SSE
   res.writeHead(200, {
     "Content-Type": "text/event-stream",
@@ -112,7 +112,7 @@ router.post("/agent/stream", async (req, res) => {
 });
 
 // Endpoint to receive tool results from frontend
-router.post("/agent/tool-result", (req, res) => {
+router.post("/tool-result", (req, res) => {
   const { toolUseId, result } = req.body;
   
   if (!toolUseId) {

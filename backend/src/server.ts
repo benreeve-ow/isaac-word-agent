@@ -4,14 +4,16 @@ import https from "https";
 import fs from "fs";
 import path from "path";
 import dotenv from "dotenv";
+
+// Load environment variables from root .env file FIRST
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+
+// Import routes AFTER env vars are loaded
 import agentRoutes from "./routes/agent";
 import toolRoutes from "./routes/tools";
 // Import legacy routes
 const claudeRoutes = require("../routes/claude");
 const legacyAgentRoutes = require("../routes/agent");
-
-// Load environment variables from root .env file
-dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 const app = express();
 const PORT = process.env.PORT || 3000;
