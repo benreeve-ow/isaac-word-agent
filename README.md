@@ -45,10 +45,10 @@ cd backend
 # Install dependencies
 npm install
 
-# Create .env file from example (in root directory)
-cp ../../.env.example .env
+# Copy .env.example to .env in root directory (if not already done)
+# cp ../../.env.example ../../.env
 
-# Edit .env with your settings:
+# Edit root .env with your settings:
 # - ANTHROPIC_API_KEY=sk-ant-api-your-key-here
 # - MODEL=claude-sonnet-4-20250514
 # - TOOL_BRIDGE_SECRET=<generate-random-uuid>
@@ -195,7 +195,7 @@ export const customTools = {
 
 ### Environment Variables
 
-Create `.env` in the backend directory:
+Create `.env` in the root directory (copy from `.env.example`):
 
 ```env
 # Anthropic API

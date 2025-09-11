@@ -7,8 +7,8 @@ import dotenv from "dotenv";
 import agentRoutes from "./routes/agent";
 import toolRoutes from "./routes/tools";
 
-// Load environment variables
-dotenv.config();
+// Load environment variables from root .env file
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 const app = express();
 const PORT = process.env.PORT || 3000;
