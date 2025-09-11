@@ -1,6 +1,6 @@
 # Isaac - AI Document Assistant for Microsoft Word
 
-Isaac is an intelligent document assistant that integrates Claude AI directly into Microsoft Word. With advanced editing capabilities, autonomous document processing, and a modular tool system, Isaac helps you write, edit, and review documents more effectively.
+Isaac is an intelligent document assistant that integrates Claude AI directly into Microsoft Word. With advanced editing capabilities, autonomous document processing, and a modular tool system powered by Mastra framework, Isaac helps you write, edit, and review documents more effectively.
 
 ## ✨ Features
 
@@ -9,16 +9,15 @@ Isaac is an intelligent document assistant that integrates Claude AI directly in
   - **Review Mode**: Comprehensive document analysis and commenting
   - **Edit Mode**: Direct text improvements with custom instructions
   
-- 🛠️ **Modular Tool System** - Extensible architecture with tools for:
-  - Text editing and content manipulation
-  - Formatting and styling
-  - Document structure (tables, breaks, sections)
-  - Review and commenting
-  - Document analysis
+- 🛠️ **Mastra-Powered Architecture**
+  - Unified Document View (UDV) for robust table-adjacent editing
+  - Persistent working memory with plan/status tracking
+  - Intelligent context management with automatic compression
+  - SSE-based tool bridge for real-time Word operations
 
 - 📝 **Track Changes Integration** - All edits are tracked with Word's native revision system
 - 🎨 **Style Matching** - Analyze and match your document's writing style
-- 📊 **Smart Context Management** - Handles up to 140k tokens efficiently
+- 📊 **Smart Context Management** - Handles up to 160k tokens efficiently
 - 🔍 **Real-time Progress Tracking** - See exactly what Isaac is doing
 - 🐛 **Built-in Debug Console** - Troubleshoot issues easily
 
@@ -134,6 +133,14 @@ Select text and provide specific improvement instructions:
 - **Tool Bus**: SSE bridge between agent tools and Word operations
 - **Memory**: Persistent working memory with plan/status tracking
 
+### Unified Document View (UDV)
+
+The UDV system solves table-adjacent editing issues by:
+1. Parsing document OOXML to maintain true reading order
+2. Merging paragraphs and tables into a unified structure
+3. Providing precise range resolution for edits near tables
+4. Using stable hit IDs for reliable multi-step operations
+
 ## 🛠️ Tool System
 
 Isaac includes 15+ specialized tools:
@@ -145,26 +152,44 @@ Isaac includes 15+ specialized tools:
 | **Structure** | `insert_table`, `insert_break`, `find_tables` | Manage document structure |
 | **Review** | `add_comment`, `get_comments` | Add and read review comments |
 | **Analysis** | `analyze_structure`, `read_full_document` | Analyze document content |
+| **Planning** | `plan.add`, `plan.list`, `plan.complete` | Manage task planning |
+| **Status** | `status.get`, `status.tick` | Track operation progress |
 
 ### Creating Custom Tools
 
 ```typescript
-// Example: Create a new tool
-export class CustomTool extends BaseTool {
-  name = "custom_tool";
-  description = "Does something custom";
-  category = "editing" as const;
-  
-  parameters = [
-    { name: "text", type: "string", required: true }
-  ];
-  
-  async execute(params: any, context: ToolContext): Promise<ToolResult> {
-    // Implementation using Word.js APIs
-    return this.createSuccessResult("Done!");
+// Example: Create a new tool in backend/src/mastra/tools/
+export const customTools = {
+  "custom_tool": {
+    description: "Does something custom",
+    parameters: z.object({
+      text: z.string().describe("Input text")
+    }),
+    handler: async ({ text }, context) => {
+      // Tool implementation
+      return { success: true, result: "Done!" };
+    }
   }
-}
+};
 ```
+
+## 📡 API Endpoints
+
+### Agent Endpoints (Mastra)
+
+- `POST /agent/run` - Single-shot agent execution
+- `GET /agent/stream` - SSE streaming for real-time tool execution
+- `POST /tool-result` - Tool execution results from add-in
+
+### Legacy Claude Endpoints
+
+- `POST /api/claude/improve` - Direct text improvement
+- `POST /api/claude/implement-comment` - Apply reviewer comments
+- `POST /api/claude/analyze-style` - Analyze writing style
+
+### Health Check
+
+- `GET /health` - Server status and version
 
 ## 🔧 Configuration
 
@@ -190,11 +215,19 @@ TOOL_BRIDGE_SECRET=<generate-random-uuid>
 
 # Server
 PORT=3000
+NODE_ENV=development
 ```
 
 ### CLAUDE.md Instructions
 
 Isaac respects instructions in `/CLAUDE.md` for consistent behavior across sessions.
+
+### Document Settings
+
+Each Word document stores its own settings via Office.context.document.settings:
+- System prompts
+- Style preferences
+- Mode configurations
 
 ## 🐛 Troubleshooting
 
@@ -210,9 +243,25 @@ Isaac respects instructions in `/CLAUDE.md` for consistent behavior across sessi
   - Windows: `rm -rf %LOCALAPPDATA%\Microsoft\Office\16.0\Wef\`
 - Restart Word and run `npm start` again
 
-**Table Insertion Issues**
-- Isaac automatically handles Word's table insertion quirks
-- Tables are created with buffer paragraphs to prevent content absorption
+**Table Insertion/Editing Issues**
+- Isaac uses UDV to handle Word's table quirks automatically
+- Tables are edited with precise range resolution
+- Adjacent paragraph edits maintain document structure
+
+**Certificate Issues**
+1. Visit `https://localhost:3000/health` in your browser
+2. Accept the security warning
+3. Visit `https://localhost:3001` and accept that certificate too
+4. Restart both servers
+
+**Port Already in Use**
+```bash
+# Find process using port
+lsof -i :3000  # or :3001
+
+# Kill the process
+kill -9 <PID>
+```
 
 ### Debug Console
 
@@ -221,6 +270,7 @@ The built-in debug console shows:
 - API requests and responses
 - Error messages with stack traces
 - Performance metrics
+- Memory usage and token counts
 
 ## 📚 Development
 
@@ -228,9 +278,10 @@ The built-in debug console shows:
 
 **Backend**
 ```bash
-npm start           # HTTPS server (production)
+npm start           # HTTPS server with TypeScript
 npm run dev         # Development with auto-reload
-npm run start:http  # HTTP server (if HTTPS fails)
+npm run build       # Compile TypeScript
+npm run serve       # Run compiled JavaScript
 ```
 
 **Add-in**
@@ -252,29 +303,85 @@ isaac-word-agent/
 │   │   │   ├── agent.word.ts  # Main agent definition
 │   │   │   ├── memory.ts      # Working memory config
 │   │   │   ├── tools/         # Tool implementations
+│   │   │   ├── compressors/   # Memory compression
 │   │   │   └── prompts/       # System prompts
 │   │   ├── bridge/            # Tool Bus for SSE
 │   │   ├── routes/            # API endpoints
 │   │   └── services/          # Token counting, etc
-│   └── memory.db              # SQLite for persistence
+│   ├── memory.db              # SQLite for persistence
+│   └── tsconfig.json          # TypeScript config
 ├── addin/WordClaudeEditor/     # Word add-in
 │   ├── src/
 │   │   ├── services/
 │   │   │   ├── ToolHost.ts    # SSE client for tools
-│   │   │   └── UnifiedDoc/    # UDV implementation
+│   │   │   ├── UnifiedDoc/    # UDV implementation
+│   │   │   │   ├── UnifiedDoc.ts    # UDV core logic
+│   │   │   │   └── ooxmlToUDV.ts    # OOXML parser
+│   │   │   └── Status.ts      # Status tracking
 │   │   ├── tools/             # Legacy tool implementations
 │   │   ├── modes/             # Processing modes
-│   │   └── taskpane/          # React UI
+│   │   ├── prompts/           # Prompt templates
+│   │   └── taskpane/          # React UI components
 │   └── manifest.xml           # Add-in manifest
 └── CLAUDE.md                  # AI instructions
 ```
 
+### Testing
+
+```bash
+# Backend tests (to be implemented)
+cd backend && npm test
+
+# Add-in browser testing
+cd addin/WordClaudeEditor
+open test-browser.html
+```
+
+### Debugging Tips
+
+1. **VS Code Debugging**: Press F5 in add-in directory → "Debug in Browser"
+2. **Network Monitoring**: Check browser DevTools Network tab
+3. **Memory Inspection**: View `backend/memory.db` with SQLite browser
+4. **Token Usage**: Monitor token counts in debug console
+
 ## 🔒 Security
 
 - API keys are stored server-side only
-- All communication uses HTTPS
+- All communication uses HTTPS with certificates
+- Tool Bridge secured with TOOL_BRIDGE_SECRET
 - Track changes provide audit trail
 - No automatic document modifications without user action
+- Input sanitization on all user inputs
+
+## 🚀 Production Deployment
+
+For production deployment:
+
+1. **Environment Setup**
+   - Set `NODE_ENV=production`
+   - Use proper SSL certificates
+   - Configure environment variables
+
+2. **Build Process**
+   ```bash
+   # Backend
+   cd backend && npm run build
+   
+   # Add-in
+   cd addin/WordClaudeEditor && npm run build
+   ```
+
+3. **Security Hardening**
+   - Implement rate limiting
+   - Add request validation
+   - Set up monitoring
+   - Configure firewall rules
+
+4. **Deployment**
+   - Deploy backend to HTTPS-enabled server
+   - Host add-in files on CDN
+   - Update manifest.xml URLs
+   - Submit to Office Store (optional)
 
 ## 🤝 Contributing
 
@@ -289,11 +396,19 @@ isaac-word-agent/
 - Add TypeScript types
 - Document new tools
 - Test in Word before submitting
+- Update this README for new features
 
 ## 📄 License
 
 MIT License - see LICENSE file for details
 
+## 🙏 Acknowledgments
+
+- Built with Claude AI (Anthropic)
+- Powered by Mastra framework
+- Uses Office.js and Fluent UI
+- React and TypeScript
+
 ---
 
-Built with ❤️ using Claude AI, React, TypeScript, and Office.js
+Built with ❤️ using Claude AI, Mastra, React, TypeScript, and Office.js
