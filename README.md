@@ -34,10 +34,10 @@ Isaac is an intelligent document assistant that integrates Claude AI directly in
 
 ```bash
 git clone <repository-url>
-cd word-claude-editor
+cd isaac-word-agent
 ```
 
-### 2. Backend Setup
+### 2. Backend Setup (Mastra-based)
 
 ```bash
 # Navigate to backend
@@ -46,14 +46,19 @@ cd backend
 # Install dependencies
 npm install
 
-# Create .env file with your API key
-echo "ANTHROPIC_API_KEY=sk-ant-api-your-key-here" > .env
+# Create .env file from example
+cp .env.example .env
+
+# Edit .env with your settings:
+# - ANTHROPIC_API_KEY=sk-ant-api-your-key-here
+# - MODEL=claude-3-5-sonnet-latest
+# - TOOL_BRIDGE_SECRET=<generate-random-uuid>
 
 # Start the HTTPS server
 npm start
 ```
 
-The backend runs on `https://localhost:3000` with automatic HTTPS certificates.
+The backend runs on `https://localhost:3000` with Mastra agent orchestration.
 
 ### 3. Add-in Setup
 
@@ -72,6 +77,7 @@ This will:
 1. Start the development server on `https://localhost:3001`
 2. Open Microsoft Word
 3. Automatically load Isaac as an add-in
+4. Connect to Mastra agent via SSE bridge
 
 ## 📖 Usage Guide
 
@@ -105,27 +111,28 @@ Select text and provide specific improvement instructions:
 
 ## 🏗️ Architecture
 
-### System Overview
+### System Overview (Mastra-based)
 
 ```
-┌─────────────┐     ┌──────────────┐     ┌─────────────┐
-│   Word UI   │────▶│  Isaac UI    │────▶│   Backend   │
-│             │     │   (React)    │     │  (Express)  │
-└─────────────┘     └──────────────┘     └─────────────┘
-                            │                     │
-                            ▼                     ▼
-                    ┌──────────────┐     ┌─────────────┐
-                    │ Tool System  │     │  Claude AI  │
-                    │  (15+ tools) │     │    (API)    │
-                    └──────────────┘     └─────────────┘
+┌─────────────┐     ┌──────────────┐     ┌─────────────┐     ┌─────────────┐
+│   Word UI   │────▶│  Isaac UI    │────▶│   Backend   │────▶│   Mastra    │
+│             │     │   (React)    │     │  (Express)  │     │    Agent    │
+└─────────────┘     └──────────────┘     └─────────────┘     └─────────────┘
+                            │                     │                     │
+                            ▼                     ▼                     ▼
+                    ┌──────────────┐     ┌─────────────┐     ┌─────────────┐
+                    │   ToolHost   │◀────│  Tool Bus   │     │  Claude AI  │
+                    │  (SSE/UDV)   │     │    (SSE)    │     │    (API)    │
+                    └──────────────┘     └─────────────┘     └─────────────┘
 ```
 
 ### Key Components
 
-- **Frontend**: React-based task pane with Fluent UI
-- **Tool System**: Modular TypeScript classes for document operations
-- **Backend**: Express.js server handling Claude API communication
-- **Streaming**: Real-time updates via Server-Sent Events (SSE)
+- **Frontend**: React task pane with ToolHost for Word operations
+- **UDV**: Unified Document View merging paragraphs/tables in reading order
+- **Backend**: Express.js with Mastra agent orchestration
+- **Tool Bus**: SSE bridge between agent tools and Word operations
+- **Memory**: Persistent working memory with plan/status tracking
 
 ## 🛠️ Tool System
 
@@ -166,8 +173,23 @@ export class CustomTool extends BaseTool {
 Create `.env` in the backend directory:
 
 ```env
+# Anthropic API
 ANTHROPIC_API_KEY=sk-ant-api-your-key-here
-PORT=3000  # Optional, defaults to 3000
+MODEL=claude-3-5-sonnet-latest
+
+# Context Management
+CONTEXT_INPUT_BUDGET_TOKENS=160000
+CONTEXT_OUTPUT_BUDGET_TOKENS=40000
+CONTEXT_SAFETY_MARGIN=5000
+
+# Memory Storage
+MEMORY_URL=file:./memory.db
+
+# Security
+TOOL_BRIDGE_SECRET=<generate-random-uuid>
+
+# Server
+PORT=3000
 ```
 
 ### CLAUDE.md Instructions
@@ -223,20 +245,28 @@ npm run validate    # Validate manifest
 ### Project Structure
 
 ```
-word-claude-editor/
+isaac-word-agent/
 ├── backend/                    # Express.js API server
-│   ├── routes/                 # API endpoints
-│   ├── services/               # Claude integration
-│   └── utils/                  # Utilities
+│   ├── src/
+│   │   ├── mastra/            # Mastra agent & tools
+│   │   │   ├── agent.word.ts  # Main agent definition
+│   │   │   ├── memory.ts      # Working memory config
+│   │   │   ├── tools/         # Tool implementations
+│   │   │   └── prompts/       # System prompts
+│   │   ├── bridge/            # Tool Bus for SSE
+│   │   ├── routes/            # API endpoints
+│   │   └── services/          # Token counting, etc
+│   └── memory.db              # SQLite for persistence
 ├── addin/WordClaudeEditor/     # Word add-in
 │   ├── src/
-│   │   ├── tools/              # Tool implementations
-│   │   ├── modes/              # Processing modes
-│   │   ├── prompts/            # AI prompts
-│   │   ├── services/           # Core services
-│   │   └── taskpane/           # React UI
-│   └── manifest.xml            # Add-in manifest
-└── CLAUDE.md                   # AI instructions
+│   │   ├── services/
+│   │   │   ├── ToolHost.ts    # SSE client for tools
+│   │   │   └── UnifiedDoc/    # UDV implementation
+│   │   ├── tools/             # Legacy tool implementations
+│   │   ├── modes/             # Processing modes
+│   │   └── taskpane/          # React UI
+│   └── manifest.xml           # Add-in manifest
+└── CLAUDE.md                  # AI instructions
 ```
 
 ## 🔒 Security
