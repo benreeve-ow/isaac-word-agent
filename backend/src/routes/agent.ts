@@ -47,47 +47,70 @@ router.post("/run", checkAuth, async (req: Request, res: Response) => {
   }
 });
 
-// SSE streaming endpoint
-router.get("/stream", checkAuth, async (req: Request, res: Response) => {
+// SSE streaming endpoint - accepts POST like the legacy system
+router.post("/stream", checkAuth, async (req: Request, res: Response) => {
   // Set SSE headers
-  res.setHeader("Content-Type", "text/event-stream");
-  res.setHeader("Cache-Control", "no-cache");
-  res.setHeader("Connection", "keep-alive");
-  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.writeHead(200, {
+    "Content-Type": "text/event-stream",
+    "Cache-Control": "no-cache",
+    "Connection": "keep-alive",
+    "Access-Control-Allow-Origin": "*",
+  });
   
-  // Parse query params for initial message
-  const userMessage = req.query.message as string;
+  // Get data from request body
+  const { messages, documentContext, tools, mode } = req.body;
   
-  if (!userMessage) {
-    res.write(`event: error\ndata: ${JSON.stringify({ error: "No message provided" })}\n\n`);
+  if (!messages || messages.length === 0) {
+    res.write(`data: ${JSON.stringify({ 
+      type: "error",
+      data: { error: "No messages provided" }
+    })}\n\n`);
     res.end();
     return;
   }
   
   try {
-    // Listen for tool calls
+    // Listen for tool calls from Mastra
     const toolCallHandler = (call: any) => {
-      res.write(`event: toolCall\ndata: ${JSON.stringify(call)}\n\n`);
+      // Send tool_use events like the legacy system expects
+      res.write(`data: ${JSON.stringify({ 
+        type: "tool_use",
+        data: call
+      })}\n\n`);
     };
     
     toolBus.on("call", toolCallHandler);
     
-    // Stream agent response - Mastra expects messages as first parameter
-    const stream = await wordAgent.stream(
-      [{ role: "user", content: userMessage }]
-    );
+    // Stream agent response with full message context
+    const stream = await wordAgent.stream(messages);
+    
+    // Send initial processing message
+    res.write(`data: ${JSON.stringify({ 
+      type: "content",
+      data: { text: "" }
+    })}\n\n`);
     
     // Access the text stream from the result
     const textStream = stream.textStream;
+    let fullText = "";
+    
     for await (const chunk of textStream) {
-      // Send the raw text chunk
-      res.write(`event: text\ndata: ${JSON.stringify({ text: chunk })}\n\n`);
+      fullText += chunk;
+      // Send content updates like legacy system
+      res.write(`data: ${JSON.stringify({ 
+        type: "content",
+        data: { text: fullText }
+      })}\n\n`);
     }
     
     // Clean up
     toolBus.off("call", toolCallHandler);
     
-    res.write(`event: done\ndata: {}\n\n`);
+    // Send completion
+    res.write(`data: ${JSON.stringify({ 
+      type: "done",
+      data: {}
+    })}\n\n`);
     res.end();
     
   } catch (error: any) {
@@ -95,6 +118,25 @@ router.get("/stream", checkAuth, async (req: Request, res: Response) => {
     res.write(`event: error\ndata: ${JSON.stringify({ error: error.message })}\n\n`);
     res.end();
   }
+});
+
+// Endpoint to receive tool results from frontend
+router.post("/tool-result", checkAuth, async (req: Request, res: Response) => {
+  const { toolUseId, result } = req.body;
+  
+  if (!toolUseId) {
+    return res.status(400).json({ error: "Missing toolUseId" });
+  }
+  
+  // Send result back through the tool bus
+  toolBus.onResult({
+    id: toolUseId,
+    ok: !result.error,
+    data: result.output,
+    error: result.error
+  });
+  
+  res.json({ success: true });
 });
 
 export default router;

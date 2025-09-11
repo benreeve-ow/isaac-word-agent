@@ -11,9 +11,6 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 // Import routes AFTER env vars are loaded
 import agentRoutes from "./routes/agent";
 import toolRoutes from "./routes/tools";
-// Import legacy routes
-const claudeRoutes = require("../routes/claude");
-const legacyAgentRoutes = require("../routes/agent");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -25,14 +22,9 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// Routes
-// New Mastra routes (not yet connected to frontend)
-app.use("/agent", agentRoutes);
+// Routes - Mastra only
+app.use("/api/agent", agentRoutes);
 app.use("/", toolRoutes);
-
-// Legacy routes (what frontend currently uses)
-app.use("/api/claude", claudeRoutes);
-app.use("/api/agent", legacyAgentRoutes);
 
 // Health check
 app.get("/health", (req, res) => {

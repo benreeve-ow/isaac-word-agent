@@ -8,9 +8,10 @@ export class ToolHost {
   private secret: string;
   private hitMap: Map<string, { path: UDVPath; offStart: number; offEnd: number }> = new Map();
 
-  constructor(baseUrl: string = "https://localhost:3000", secret: string = "") {
+  constructor(baseUrl: string = "https://localhost:3000") {
     this.baseUrl = baseUrl;
-    this.secret = secret || process.env.REACT_APP_TOOL_BRIDGE_SECRET || "";
+    // In a real app, this would come from secure storage or environment
+    this.secret = "79e7fbce-0788-4308-9638-d49c2f860cdc";
   }
 
   async connect() {
