@@ -45,8 +45,8 @@ cd backend
 # Install dependencies
 npm install
 
-# Create .env file from example
-cp .env.example .env
+# Create .env file from example (in root directory)
+cp ../../.env.example .env
 
 # Edit .env with your settings:
 # - ANTHROPIC_API_KEY=sk-ant-api-your-key-here
