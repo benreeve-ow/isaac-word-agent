@@ -14,7 +14,7 @@ const sys = fs.readFileSync(path.join(__dirname, "prompts/system.word.txt"), "ut
 export const wordAgent = new Agent({
   name: "WordAgent",
   instructions: sys,
-  model: anthropic(process.env.MODEL ?? "claude-3-5-sonnet-latest"),
+  model: anthropic(process.env.MODEL ?? "claude-sonnet-4-20250514"),
   memory: getMemory(),
   tools: {
     ...planTools,

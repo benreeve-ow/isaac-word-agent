@@ -51,7 +51,7 @@ cp .env.example .env
 
 # Edit .env with your settings:
 # - ANTHROPIC_API_KEY=sk-ant-api-your-key-here
-# - MODEL=claude-3-5-sonnet-latest
+# - MODEL=claude-sonnet-4-20250514
 # - TOOL_BRIDGE_SECRET=<generate-random-uuid>
 
 # Start the HTTPS server
@@ -175,7 +175,7 @@ Create `.env` in the backend directory:
 ```env
 # Anthropic API
 ANTHROPIC_API_KEY=sk-ant-api-your-key-here
-MODEL=claude-3-5-sonnet-latest
+MODEL=claude-sonnet-4-20250514
 
 # Context Management
 CONTEXT_INPUT_BUDGET_TOKENS=160000

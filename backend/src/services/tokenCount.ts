@@ -5,7 +5,7 @@ export async function countTokens(payload: {
 }) {
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
   const r = await client.messages.countTokens({ 
-    model: process.env.MODEL ?? "claude-3-5-sonnet-latest", 
+    model: process.env.MODEL ?? "claude-sonnet-4-20250514", 
     ...payload 
   } as any);
   return r.input_tokens;

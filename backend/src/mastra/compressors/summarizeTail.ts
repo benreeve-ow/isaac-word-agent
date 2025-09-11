@@ -32,7 +32,7 @@ ${tail.map(m => `[${m.role}] ${typeof m.content === "string" ? m.content : JSON.
 Return a concise narrative with bullet anchors and decisions.`;
 
     const resp = await client.messages.create({
-      model: process.env.MODEL ?? "claude-3-5-sonnet-latest",
+      model: process.env.MODEL ?? "claude-sonnet-4-20250514",
       max_tokens: 1800,
       messages: [{ role: "user", content: prompt }]
     });
