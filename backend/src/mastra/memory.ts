@@ -1,8 +1,6 @@
 import { Memory } from "@mastra/memory";
 import { LibSQLStore } from "@mastra/libsql";
-import { ToolCallFilter, TokenLimiter } from "@mastra/memory/processors";
 import { z } from "zod";
-import { SummarizeTail } from "./compressors/summarizeTail";
 
 const WM_SCHEMA = z.object({
   plan: z.object({
@@ -24,16 +22,10 @@ const WM_SCHEMA = z.object({
 });
 
 export const getMemory = () => {
-  const target = Number(process.env.CONTEXT_INPUT_BUDGET_TOKENS ?? 160000) -
-                 Number(process.env.CONTEXT_SAFETY_MARGIN ?? 5000);
-
   return new Memory({
     storage: new LibSQLStore({ url: process.env.MEMORY_URL ?? "file:./memory.db" }),
-    processors: [
-      new ToolCallFilter(),
-      new SummarizeTail({ targetTokens: target }),
-      new TokenLimiter(Number(process.env.CONTEXT_INPUT_BUDGET_TOKENS ?? 160000)),
-    ],
+    // Temporarily disable processors until we can properly integrate them
+    processors: [],
     options: {
       workingMemory: {
         schema: WM_SCHEMA,

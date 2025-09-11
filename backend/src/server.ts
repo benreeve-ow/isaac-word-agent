@@ -29,8 +29,8 @@ app.get("/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
-// HTTPS setup using Office add-in certificates
-const certPath = path.join(process.cwd(), "..", "addin", "WordClaudeEditor", "certs");
+// HTTPS setup using Office add-in dev certificates
+const certPath = path.join(process.env.HOME || "", ".office-addin-dev-certs");
 const httpsOptions = {
   key: fs.readFileSync(path.join(certPath, "localhost.key")),
   cert: fs.readFileSync(path.join(certPath, "localhost.crt"))

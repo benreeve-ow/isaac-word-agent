@@ -1,4 +1,13 @@
-import type { MemoryProcessor, Message } from "@mastra/memory";
+// Define types locally since they're not exported from @mastra/memory
+interface Message {
+  id?: string;
+  role: string;
+  content: any;
+}
+
+interface MemoryProcessor {
+  process(messages: Message[]): Promise<Message[]>;
+}
 import { countTokens } from "../../services/tokenCount";
 import Anthropic from "@anthropic-ai/sdk";
 
@@ -32,7 +41,7 @@ ${tail.map(m => `[${m.role}] ${typeof m.content === "string" ? m.content : JSON.
 Return a concise narrative with bullet anchors and decisions.`;
 
     const resp = await client.messages.create({
-      model: process.env.MODEL ?? "claude-sonnet-4-20250514",
+      model: process.env.MODEL ?? "claude-3-5-sonnet-20241022",
       max_tokens: 1800,
       messages: [{ role: "user", content: prompt }]
     });

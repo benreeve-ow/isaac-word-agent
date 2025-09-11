@@ -23,5 +23,5 @@ export const wordAgent = new Agent({
     ...editTools,
     ...snapshotTools,
   },
-  maxSteps: 8,
+  // maxSteps: 8, // Not a valid property for Mastra Agent
 });

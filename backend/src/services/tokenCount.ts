@@ -1,12 +1,16 @@
-import Anthropic from "@anthropic-ai/sdk";
-
 export async function countTokens(payload: { 
   messages: {role:"user"|"assistant"|"system"; content:any}[] 
 }) {
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
-  const r = await client.messages.countTokens({ 
-    model: process.env.MODEL ?? "claude-sonnet-4-20250514", 
-    ...payload 
-  } as any);
-  return r.input_tokens;
+  // Simple token estimation: ~4 characters per token
+  // This is a rough approximation since the actual API isn't available
+  let totalChars = 0;
+  
+  for (const message of payload.messages) {
+    const content = typeof message.content === "string" 
+      ? message.content 
+      : JSON.stringify(message.content);
+    totalChars += content.length;
+  }
+  
+  return Math.ceil(totalChars / 4);
 }

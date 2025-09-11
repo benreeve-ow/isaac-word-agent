@@ -35,9 +35,8 @@ router.post("/run", checkAuth, async (req: Request, res: Response) => {
       });
     }
     
-    // Run agent
-    const result = await wordAgent.generate({
-      messages,
+    // Run agent - Mastra expects messages as first parameter
+    const result = await wordAgent.generate(messages, {
       context: documentContext
     });
     
@@ -73,23 +72,16 @@ router.get("/stream", checkAuth, async (req: Request, res: Response) => {
     
     toolBus.on("call", toolCallHandler);
     
-    // Stream agent response
-    const stream = await wordAgent.stream({
-      messages: [{ role: "user", content: userMessage }]
-    });
+    // Stream agent response - Mastra expects messages as first parameter
+    const stream = await wordAgent.stream(
+      [{ role: "user", content: userMessage }]
+    );
     
-    for await (const chunk of stream) {
-      // Send text chunks
-      if (chunk.type === "text") {
-        res.write(`event: text\ndata: ${JSON.stringify({ text: chunk.text })}\n\n`);
-      }
-      
-      // Send tool calls are handled by toolBus
-      
-      // Send status updates
-      if (chunk.type === "status") {
-        res.write(`event: status\ndata: ${JSON.stringify(chunk.data)}\n\n`);
-      }
+    // Access the text stream from the result
+    const textStream = stream.textStream;
+    for await (const chunk of textStream) {
+      // Send the raw text chunk
+      res.write(`event: text\ndata: ${JSON.stringify({ text: chunk })}\n\n`);
     }
     
     // Clean up
