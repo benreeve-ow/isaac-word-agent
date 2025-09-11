@@ -132,7 +132,7 @@ export class UnifiedDocumentView {
       
       for (const block of this.udv.blocks) {
         if (block.kind === "paragraph") {
-          const matches = block.text.matchAll(regex);
+          const matches = Array.from(block.text.matchAll(regex));
           for (const match of matches) {
             if (match.index !== undefined) {
               hits.push({
@@ -153,7 +153,7 @@ export class UnifiedDocumentView {
               
               for (let p = 0; p < cell.paragraphs.length; p++) {
                 const para = cell.paragraphs[p];
-                const matches = para.text.matchAll(regex);
+                const matches = Array.from(para.text.matchAll(regex));
                 
                 for (const match of matches) {
                   if (match.index !== undefined) {
@@ -236,9 +236,23 @@ export class UnifiedDocumentView {
       
     } else if (path.kind === "cell") {
       // Access the table and cell
-      const table = context.document.body.tables.getItemAt(path.tableIndex);
-      const row = table.rows.getItemAt(path.rowIndex);
-      const cell = row.cells.getItemAt(path.colIndex);
+      const tables = context.document.body.tables;
+      tables.load("items");
+      await context.sync();
+      
+      if (path.tableIndex >= tables.items.length) {
+        throw new Error(`Table index ${path.tableIndex} out of bounds`);
+      }
+      
+      const table = tables.items[path.tableIndex];
+      table.load("rows");
+      await context.sync();
+      
+      const row = table.rows.items[path.rowIndex];
+      row.load("cells");
+      await context.sync();
+      
+      const cell = row.cells.items[path.colIndex];
       const cellBody = cell.body;
       
       cellBody.load("text");

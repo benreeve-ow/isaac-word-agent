@@ -73,7 +73,7 @@ export class ToolHost {
     }
   }
 
-  private async handleSnapshot(payload: any): Promise<any> {
+  private async handleSnapshot(_payload: any): Promise<any> {
     return Word.run(async (context) => {
       const udv = await buildUDVFromDocument(context);
       udvInstance.setUDV(udv);
