@@ -218,6 +218,7 @@ class AgentServiceClass {
                 }
                 
                 console.log(`[AgentService] Executing tool: ${message.data.name}`);
+                console.log(`[AgentService] Tool input:`, message.data.input);
                 
                 try {
                   // Execute the tool using the new system
@@ -437,17 +438,28 @@ class AgentServiceClass {
               // Handle different message types
               if (message.type === "tool_use") {
                 console.log(`[AgentService] Received tool call: ${message.data.name}`);
+                console.log(`[AgentService] Full message data:`, JSON.stringify(message.data, null, 2));
                 
                 // Use ToolExecutor for dynamic tool execution
-                const toolResult = await this.toolExecutor.execute(
-                  message.data.name,
-                  message.data.args || message.data.input || {},
-                  { trackChanges: true }
-                );
+                let toolResult;
+                try {
+                  toolResult = await this.toolExecutor.execute(
+                    message.data.name,
+                    message.data.args || message.data.input || {},
+                    { trackChanges: true }
+                  );
+                } catch (toolError) {
+                  console.error(`[AgentService] Tool execution error:`, toolError);
+                  toolResult = {
+                    success: false,
+                    error: toolError instanceof Error ? toolError.message : 'Tool execution failed'
+                  };
+                }
                 
                 console.log(`[AgentService] Tool ${message.data.name} result:`, {
                   success: toolResult?.success,
-                  hasData: !!toolResult?.data
+                  hasData: !!toolResult?.data,
+                  error: toolResult?.error
                 });
                 
                 // Send result back to backend

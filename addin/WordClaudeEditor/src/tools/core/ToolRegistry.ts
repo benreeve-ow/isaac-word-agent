@@ -47,9 +47,31 @@ export class ToolRegistry {
   
   /**
    * Get a tool by name
+   * Supports both dot notation (insert.table) and underscore notation (insert_table)
    */
   getTool(name: string): ToolDefinition | undefined {
-    return this.tools.get(name);
+    // First try direct lookup
+    let tool = this.tools.get(name);
+    
+    // If not found and name contains dots, try converting to underscores
+    if (!tool && name.includes('.')) {
+      const underscoreName = name.replace(/\./g, '_');
+      tool = this.tools.get(underscoreName);
+      if (tool) {
+        console.log(`[ToolRegistry] Mapped ${name} to ${underscoreName}`);
+      }
+    }
+    
+    // If not found and name contains underscores, try converting to dots
+    if (!tool && name.includes('_')) {
+      const dotName = name.replace(/_/g, '.');
+      tool = this.tools.get(dotName);
+      if (tool) {
+        console.log(`[ToolRegistry] Mapped ${name} to ${dotName}`);
+      }
+    }
+    
+    return tool;
   }
   
   /**
@@ -75,9 +97,11 @@ export class ToolRegistry {
   
   /**
    * Check if a tool exists
+   * Supports both dot notation (insert.table) and underscore notation (insert_table)
    */
   hasTool(name: string): boolean {
-    return this.tools.has(name);
+    // Use getTool to handle both notations
+    return this.getTool(name) !== undefined;
   }
   
   /**

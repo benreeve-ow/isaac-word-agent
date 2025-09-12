@@ -83,8 +83,8 @@ export class MastraStreamHandler {
             toolCallId: payload?.toolCallId
           });
           
-          // Convert underscore tool names back to dots for frontend
-          const frontendToolName = payload?.toolName?.replace(/_/g, '.') || payload?.toolName;
+          // Keep tool name as-is (frontend's ToolRegistry now handles both formats)
+          const frontendToolName = payload?.toolName;
           
           // Send tool call to frontend for execution
           this.res.write(`data: ${JSON.stringify({ 

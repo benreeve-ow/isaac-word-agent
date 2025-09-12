@@ -120,7 +120,8 @@ export class InsertTableTool extends BaseTool {
     switch (params.position) {
       case "end":
         insertLocation = context.document.body.getRange(Word.RangeLocation.end);
-        insertionMethod = Word.InsertLocation.end;
+        // Use 'before' for end position since we want to insert before the end marker
+        insertionMethod = Word.InsertLocation.before;
         break;
       case "after_paragraph":
         const paragraphAfter = insertLocation.paragraphs.getFirst();
@@ -134,7 +135,8 @@ export class InsertTableTool extends BaseTool {
         insertionMethod = Word.InsertLocation.before;
         break;
       case "replace_selection":
-        insertionMethod = Word.InsertLocation.replace;
+        // For replace, we'll use 'after' and then delete the selection
+        insertionMethod = Word.InsertLocation.after;
         break;
       case "cursor":
       default:
@@ -149,6 +151,12 @@ export class InsertTableTool extends BaseTool {
       finalInsertMethod = Word.InsertLocation.before;
     } else {
       finalInsertMethod = Word.InsertLocation.after;
+    }
+    
+    // Handle replace_selection by clearing the selection first
+    if (params.position === "replace_selection") {
+      insertLocation.clear();
+      await context.document.context.sync();
     }
     
     const table = insertLocation.insertTable(
