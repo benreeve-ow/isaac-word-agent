@@ -1,45 +1,14 @@
 /**
  * Frontend passthrough tools for Mastra
- * These tools don't execute on the backend - they just pass through to the frontend
- * and wait for results via the stream handler
+ * These tools execute on the frontend (Word add-in) and wait for results
+ * using the tool bridge pattern for proper async handling
  */
 
-import { createTool } from "@mastra/core/tools";
+import { createFrontendTool } from "./toolBridge";
 import { z } from "zod";
-import { streamHandlers } from "../streamHandler";
-
-// Helper to wait for frontend tool result
-async function waitForFrontendResult(toolCallId: string, timeout = 30000): Promise<any> {
-  return new Promise((resolve, reject) => {
-    const startTime = Date.now();
-    
-    const checkInterval = setInterval(() => {
-      // Check all stream handlers for a result
-      for (const [sessionId, handler] of streamHandlers) {
-        // We need to access the handler's pending results
-        // For now, we'll just wait and let the stream handler handle it
-      }
-      
-      if (Date.now() - startTime > timeout) {
-        clearInterval(checkInterval);
-        reject(new Error(`Frontend tool timeout after ${timeout}ms`));
-      }
-    }, 100);
-    
-    // Store the promise handlers so the stream handler can resolve them
-    // This is handled in the streamHandler's handleToolResult method
-    setTimeout(() => {
-      clearInterval(checkInterval);
-      resolve({ 
-        message: "Tool executed on frontend",
-        data: {} 
-      });
-    }, 500); // Short timeout for now - the stream handler will handle the real result
-  });
-}
 
 export const frontendPassthroughTools = {
-  "doc.snapshot": createTool({
+  "doc.snapshot": createFrontendTool({
     id: "doc.snapshot",
     description: "Get a Unified Document View (UDV) of the current document for analysis and editing",
     inputSchema: z.object({
@@ -53,24 +22,10 @@ export const frontendPassthroughTools = {
         createdAt: z.string(),
         blockCount: z.number()
       })
-    }),
-    execute: async (input, toolCallId) => {
-      console.log(`[Frontend Passthrough] doc.snapshot called with toolCallId: ${toolCallId}`);
-      // The stream handler will intercept this and send it to frontend
-      // For now, return a placeholder that tells the model the tool is being executed
-      return {
-        version: "1.0",
-        blocks: [],
-        meta: {
-          documentTitle: "Processing...",
-          createdAt: new Date().toISOString(),
-          blockCount: 0
-        }
-      };
-    }
+    })
   }),
   
-  "doc.search": createTool({
+  "doc.search": createFrontendTool({
     id: "doc.search",
     description: "Search the document for text using literal or regex patterns",
     inputSchema: z.object({
@@ -90,19 +45,10 @@ export const frontendPassthroughTools = {
       summary: z.string().optional(),
       topK: z.array(z.any()).optional(),
       omitted: z.number().optional()
-    }),
-    execute: async (input, toolCallId) => {
-      console.log(`[Frontend Passthrough] doc.search called with toolCallId: ${toolCallId}`, input);
-      // Return placeholder while frontend executes
-      return {
-        totalHits: 0,
-        hits: [],
-        summary: "Processing search..."
-      };
-    }
+    })
   }),
   
-  "insert_table": createTool({
+  "insert_table": createFrontendTool({
     id: "insert_table",
     description: "Insert a properly formatted table at specified location in the document",
     inputSchema: z.object({
@@ -117,17 +63,26 @@ export const frontendPassthroughTools = {
     outputSchema: z.object({
       success: z.boolean(),
       message: z.string().optional()
-    }),
-    execute: async (input, toolCallId) => {
-      console.log(`[Frontend Passthrough] insert_table called with toolCallId: ${toolCallId}`, input);
-      return {
-        success: true,
-        message: "Processing table insertion..."
-      };
-    }
+    })
   }),
   
-  "add_comment": createTool({
+  "read_full_document": createFrontendTool({
+    id: "read_full_document",
+    description: "Read the complete document content including all text, tables, and formatting",
+    inputSchema: z.object({
+      includeFormatting: z.boolean().default(false).describe("Include formatting information"),
+      includeComments: z.boolean().default(false).describe("Include review comments")
+    }),
+    outputSchema: z.object({
+      content: z.string(),
+      paragraphCount: z.number(),
+      wordCount: z.number(),
+      tableCount: z.number().optional(),
+      hasComments: z.boolean().optional()
+    })
+  }),
+  
+  "add_comment": createFrontendTool({
     id: "add_comment",
     description: "Add a review comment to selected text or specific location in the document",
     inputSchema: z.object({
@@ -140,17 +95,10 @@ export const frontendPassthroughTools = {
       success: z.boolean(),
       message: z.string().optional(),
       location: z.string().optional()
-    }),
-    execute: async (input, toolCallId) => {
-      console.log(`[Frontend Passthrough] add_comment called with toolCallId: ${toolCallId}`, input);
-      return {
-        success: true,
-        message: "Processing comment addition..."
-      };
-    }
+    })
   }),
   
-  "doc.edit": createTool({
+  "doc.edit": createFrontendTool({
     id: "doc.edit",
     description: "Edit the document by replacing, inserting, or commenting on text found via search",
     inputSchema: z.object({
@@ -182,15 +130,6 @@ export const frontendPassthroughTools = {
       success: z.boolean(),
       operation: z.string().optional(),
       message: z.string().optional()
-    }),
-    execute: async (input, toolCallId) => {
-      console.log(`[Frontend Passthrough] doc.edit called with toolCallId: ${toolCallId}`, input);
-      // Return placeholder while frontend executes
-      return {
-        success: true,
-        operation: (input as any).operation?.type || "unknown",
-        message: "Processing edit..."
-      };
-    }
+    })
   })
 };

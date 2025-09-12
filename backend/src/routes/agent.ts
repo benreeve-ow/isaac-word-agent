@@ -102,8 +102,8 @@ router.post("/stream", checkAuth, async (req: Request, res: Response) => {
       data: { sessionId }
     })}\n\n`);
     
-    // Create a stream handler for this session
-    const streamHandler = new MastraStreamHandler(wordAgent, res);
+    // Create a stream handler for this session with sessionId
+    const streamHandler = new MastraStreamHandler(wordAgent, res, sessionId);
     
     // Store it globally so tool-result endpoint can find it
     streamHandlers.set(sessionId, streamHandler);

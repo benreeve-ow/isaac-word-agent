@@ -5,7 +5,18 @@
 import { ToolRegistry } from "./core/ToolRegistry";
 import { ToolExecutor } from "./core/ToolExecutor";
 
-// Import all tools
+// Import context-based tools (new simplified tools)
+import { InsertTextTool } from "./context/InsertTextTool";
+import { ReplaceTextTool } from "./context/ReplaceTextTool";
+import { DeleteTextTool } from "./context/DeleteTextTool";
+import { InsertTableTool as ContextInsertTableTool } from "./context/InsertTableTool";
+import { ReadDocumentTool } from "./context/ReadDocumentTool";
+import { ReadUnifiedDocumentTool } from "./context/ReadUnifiedDocumentTool";
+import { AddCommentTool as ContextAddCommentTool } from "./context/AddCommentTool";
+import { ResolveCommentTool } from "./context/ResolveCommentTool";
+import { EditTableTool as ContextEditTableTool } from "./context/EditTableTool";
+
+// Import legacy tools (keeping for backward compatibility)
 import { SearchDocumentTool } from "./editing/SearchDocumentTool";
 import { EditContentTool } from "./editing/EditContentTool";
 import { InsertContentTool } from "./editing/InsertContentTool";
@@ -43,39 +54,24 @@ export function initializeTools(): void {
   // Clear any existing tools
   registry.clear();
   
-  // Register editing tools
-  registry.register(new SearchDocumentTool());
-  registry.register(new EditContentTool());
-  registry.register(new InsertContentTool());
+  // Register ONLY the new context-based tools that match the backend
+  registry.register(new InsertTextTool());
+  registry.register(new ReplaceTextTool());
+  registry.register(new DeleteTextTool());
+  registry.register(new ContextInsertTableTool());
+  registry.register(new ReadDocumentTool());
+  registry.register(new ReadUnifiedDocumentTool());
+  registry.register(new ContextAddCommentTool());
+  registry.register(new ResolveCommentTool());
+  registry.register(new ContextEditTableTool());
   
-  // Register formatting tools
-  registry.register(new ApplyFormattingTool());
-  registry.register(new ApplyStyleTool());
-  
-  // Register review tools
-  registry.register(new AddCommentTool());
-  registry.register(new GetCommentsTool());
-  
-  // Register structure tools
-  registry.register(new InsertTableTool());
-  registry.register(new EditTableTool());
-  registry.register(new DeleteTableTool());
-  registry.register(new FindTablesTool());
-  registry.register(new InsertBreakTool());
-  
-  // Register analysis tools
-  registry.register(new AnalyzeStructureTool());
-  registry.register(new ReadFullDocumentTool());
-  
-  // Register bridge tools for legacy doc.* tools
-  registry.register(new DocSnapshotTool());
-  registry.register(new DocSearchTool());
-  registry.register(new DocEditTool());
-  
-  // Register planning tools
+  // Register planning tools (these don't conflict)
   registry.register(new PlanAddTool());
   registry.register(new PlanCompleteTool());
   registry.register(new StatusUpdateTool());
+  
+  // Note: Not registering legacy tools to avoid conflicts and confusion
+  // The backend only knows about the context-based tools
   
   console.log(`[ToolSystem] Initialized ${registry.getAllTools().length} tools`);
   console.log(`[ToolSystem] Categories: ${registry.getCategories().join(", ")}`);

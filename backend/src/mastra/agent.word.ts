@@ -3,11 +3,11 @@ import { anthropic } from "@ai-sdk/anthropic";
 import { getMemory } from "./memory";
 import { planTools } from "./tools/planTool";
 import { statusTools } from "./tools/statusTool";
-import { frontendPassthroughTools } from "./tools/frontendPassthrough";
+import { contextTools } from "./tools/contextTools";
 import fs from "node:fs";
 import path from "node:path";
 
-const sys = fs.readFileSync(path.join(__dirname, "prompts/system.word.txt"), "utf8");
+const sys = fs.readFileSync(path.join(__dirname, "prompts/system.word.simplified.txt"), "utf8");
 
 export const wordAgent = new Agent({
   name: "WordAgent",
@@ -17,7 +17,7 @@ export const wordAgent = new Agent({
   tools: {
     ...planTools,
     ...statusTools,
-    ...frontendPassthroughTools,
+    ...contextTools,
   },
   // maxSteps: 8, // Not a valid property for Mastra Agent
 });
