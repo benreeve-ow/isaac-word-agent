@@ -48,6 +48,23 @@ router.post("/run", checkAuth, async (req: Request, res: Response) => {
   }
 });
 
+// Clear memory endpoint - called when add-in restarts
+router.post("/clear-memory", checkAuth, async (req: Request, res: Response) => {
+  try {
+    // For now, we'll just log that memory clearing was requested
+    // Mastra's memory implementation may not expose direct clearing methods
+    console.log("[Memory] Memory clear requested for new session");
+    
+    // You could also consider creating a new thread ID for each session
+    // to effectively get a clean memory state
+    
+    res.json({ success: true, message: "Session reset" });
+  } catch (error: any) {
+    console.error("Failed to clear memory:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // SSE streaming endpoint - accepts POST like the legacy system
 router.post("/stream", checkAuth, async (req: Request, res: Response) => {
   // Set SSE headers

@@ -40,6 +40,37 @@ class AgentServiceClass {
     
     // Load backend URL from settings
     this.loadBackendUrl();
+    
+    // Clear memory on initialization
+    this.clearMemory().catch(error => {
+      console.error("[AgentService] Failed to clear memory on init:", error);
+    });
+  }
+  
+  /**
+   * Clear the agent's memory (called on add-in startup)
+   */
+  async clearMemory(): Promise<void> {
+    try {
+      console.log("[AgentService] Clearing memory for new session");
+      const response = await fetch(`${this.backendUrl}/api/agent/clear-memory`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${this.toolBridgeSecret}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to clear memory: ${response.status}`);
+      }
+      
+      const result = await response.json();
+      console.log("[AgentService] Memory cleared:", result.message);
+    } catch (error) {
+      console.error("[AgentService] Error clearing memory:", error);
+      // Don't throw - let the add-in continue even if memory clearing fails
+    }
   }
   
   private loadBackendUrl(): void {
@@ -275,7 +306,12 @@ class AgentServiceClass {
                 }
                 
                 yield message;
-              } else {
+              } 
+              // Handle content messages (text from the agent)
+              else if (message.type === "content") {
+                yield message;
+              } 
+              else {
                 yield message;
               }
             } catch (e) {

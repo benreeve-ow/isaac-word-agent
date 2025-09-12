@@ -64,10 +64,19 @@ export class MastraStreamHandler {
       for await (const chunk of fullStream) {
         traceLogger.logStreamChunk(chunk);
         
+        // Log the full chunk structure for debugging
         if (chunk.type === "text-delta") {
-          const textDelta = (chunk as any).payload?.textDelta || "";
+          console.log("[Text Delta Chunk] Full structure:", JSON.stringify(chunk, null, 2));
+          
+          // Try multiple possible locations for text content
+          const textDelta = (chunk as any).payload?.textDelta || 
+                            (chunk as any).payload?.text || 
+                            (chunk as any).textDelta || 
+                            (chunk as any).text || 
+                            (chunk as any).delta || "";
+                            
           accumulatedText += textDelta;
-          console.log(`[Text Delta] ${textDelta}`);
+          console.log(`[Text Delta] Content: "${textDelta}"`);
           
           // Send text to frontend
           this.res.write(`data: ${JSON.stringify({ 

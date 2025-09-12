@@ -127,6 +127,29 @@ export const frontendPassthroughTools = {
     }
   }),
   
+  "add_comment": createTool({
+    id: "add_comment",
+    description: "Add a review comment to selected text or specific location in the document",
+    inputSchema: z.object({
+      comment_text: z.string().describe("The text of the comment"),
+      target_text: z.string().optional().describe("Text to attach the comment to (if not using selection)"),
+      comment_type: z.enum(["suggestion", "question", "issue", "praise", "general"]).default("general").describe("Type of comment"),
+      priority: z.enum(["high", "medium", "low"]).default("medium").describe("Priority level of the comment")
+    }),
+    outputSchema: z.object({
+      success: z.boolean(),
+      message: z.string().optional(),
+      location: z.string().optional()
+    }),
+    execute: async (input, toolCallId) => {
+      console.log(`[Frontend Passthrough] add_comment called with toolCallId: ${toolCallId}`, input);
+      return {
+        success: true,
+        message: "Processing comment addition..."
+      };
+    }
+  }),
+  
   "doc.edit": createTool({
     id: "doc.edit",
     description: "Edit the document by replacing, inserting, or commenting on text found via search",
