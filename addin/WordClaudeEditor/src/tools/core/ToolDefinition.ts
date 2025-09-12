@@ -14,7 +14,7 @@ export interface ToolParameter {
 export interface ToolDefinition {
   name: string;
   description: string;
-  category: "editing" | "formatting" | "review" | "structure" | "analysis" | "search" | "navigation";
+  category: "editing" | "formatting" | "review" | "structure" | "analysis" | "search" | "navigation" | "planning";
   parameters: ToolParameter[];
   requiresSelection?: boolean;
   requiresApproval?: boolean;

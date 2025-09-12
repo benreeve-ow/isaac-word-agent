@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   makeStyles,
   tokens,
@@ -18,7 +18,6 @@ import EditorTab from "./EditorTab";
 import ConfigTab from "./ConfigTab";
 import AgentTab from "./AgentTab";
 import ReviewTab from "./ReviewTab";
-import { toolHost } from "../../services/ToolHost";
 
 interface AppProps {
   title: string;
@@ -77,18 +76,8 @@ const App: React.FC<AppProps> = () => {
   const styles = useStyles();
   const [selectedMode, setSelectedMode] = useState<string>("edit");
 
-  // Initialize ToolHost for Mastra integration
-  useEffect(() => {
-    // Connect to the backend SSE stream
-    toolHost.connect().catch(error => {
-      console.error("Failed to connect ToolHost:", error);
-    });
-
-    // Cleanup on unmount
-    return () => {
-      toolHost.disconnect();
-    };
-  }, []);
+  // ToolHost connection removed - not needed with current Mastra architecture
+  // Tools are executed directly through AgentService during streaming
 
   const modes = [
     { id: "review", icon: <DocumentSearchRegular />, label: "Review", disabled: false },

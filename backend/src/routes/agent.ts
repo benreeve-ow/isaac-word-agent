@@ -1,7 +1,8 @@
 import { Router, Request, Response } from "express";
 import { wordAgent } from "../mastra/agent.word";
-import { toolBus } from "../bridge/toolBus";
+import { MastraStreamHandler, streamHandlers } from "../mastra/streamHandler";
 import { countTokens } from "../services/tokenCount";
+import { traceLogger } from "../services/traceLogger";
 import { z } from "zod";
 
 const router = Router();
@@ -60,6 +61,14 @@ router.post("/stream", checkAuth, async (req: Request, res: Response) => {
   // Get data from request body
   const { messages, documentContext, tools, mode } = req.body;
   
+  // Start a new trace session
+  const sessionId = `stream-${Date.now()}`;
+  const traceFile = traceLogger.startSession(sessionId);
+  console.log(`📝 Tracing session to: ${traceFile}`);
+  
+  // Log the incoming request
+  traceLogger.logRequest(messages, { documentContext, tools, mode });
+  
   if (!messages || messages.length === 0) {
     res.write(`data: ${JSON.stringify({ 
       type: "error",
@@ -70,51 +79,30 @@ router.post("/stream", checkAuth, async (req: Request, res: Response) => {
   }
   
   try {
-    // Listen for tool calls from Mastra
-    const toolCallHandler = (call: any) => {
-      // Send tool_use events like the legacy system expects
-      res.write(`data: ${JSON.stringify({ 
-        type: "tool_use",
-        data: call
-      })}\n\n`);
-    };
-    
-    toolBus.on("call", toolCallHandler);
-    
-    // Stream agent response with full message context
-    const stream = await wordAgent.stream(messages);
-    
-    // Send initial processing message
+    // Send sessionId to frontend first
     res.write(`data: ${JSON.stringify({ 
-      type: "content",
-      data: { text: "" }
+      type: "session",
+      data: { sessionId }
     })}\n\n`);
     
-    // Access the text stream from the result
-    const textStream = stream.textStream;
-    let fullText = "";
+    // Create a stream handler for this session
+    const streamHandler = new MastraStreamHandler(wordAgent, res);
     
-    for await (const chunk of textStream) {
-      fullText += chunk;
-      // Send content updates like legacy system
-      res.write(`data: ${JSON.stringify({ 
-        type: "content",
-        data: { text: fullText }
-      })}\n\n`);
-    }
+    // Store it globally so tool-result endpoint can find it
+    streamHandlers.set(sessionId, streamHandler);
     
-    // Clean up
-    toolBus.off("call", toolCallHandler);
+    // Stream the agent response with frontend tool handling
+    await streamHandler.stream(messages, {
+      maxSteps: 10,
+      sessionId
+    });
     
-    // Send completion
-    res.write(`data: ${JSON.stringify({ 
-      type: "done",
-      data: {}
-    })}\n\n`);
-    res.end();
+    // Clean up the handler
+    streamHandlers.delete(sessionId);
     
   } catch (error: any) {
     console.error("Stream error:", error);
+    traceLogger.logError(error, 'stream_error');
     res.write(`event: error\ndata: ${JSON.stringify({ error: error.message })}\n\n`);
     res.end();
   }
@@ -122,19 +110,20 @@ router.post("/stream", checkAuth, async (req: Request, res: Response) => {
 
 // Endpoint to receive tool results from frontend
 router.post("/tool-result", checkAuth, async (req: Request, res: Response) => {
-  const { toolUseId, result } = req.body;
+  const { toolUseId, result, sessionId } = req.body;
   
   if (!toolUseId) {
     return res.status(400).json({ error: "Missing toolUseId" });
   }
   
-  // Send result back through the tool bus
-  toolBus.onResult({
-    id: toolUseId,
-    ok: !result.error,
-    data: result.output,
-    error: result.error
-  });
+  // Find the stream handler for this session
+  const streamHandler = streamHandlers.get(sessionId);
+  if (streamHandler) {
+    // Send result to the stream handler
+    streamHandler.handleToolResult(toolUseId, result);
+  } else {
+    console.warn(`No stream handler found for session ${sessionId}`);
+  }
   
   res.json({ success: true });
 });

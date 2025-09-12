@@ -21,6 +21,14 @@ import { InsertBreakTool } from "./structure/InsertBreakTool";
 import { AnalyzeStructureTool } from "./analysis/AnalyzeStructureTool";
 import { ReadFullDocumentTool } from "./analysis/ReadFullDocumentTool";
 
+// Import bridge tools for legacy doc.* and plan.* tools
+import { DocSnapshotTool } from "./bridge/DocSnapshotTool";
+import { DocSearchTool } from "./bridge/DocSearchTool";
+import { DocEditTool } from "./bridge/DocEditTool";
+import { PlanAddTool } from "./planning/PlanAddTool";
+import { PlanCompleteTool } from "./planning/PlanCompleteTool";
+import { StatusUpdateTool } from "./planning/StatusUpdateTool";
+
 // Export core classes
 export { ToolRegistry } from "./core/ToolRegistry";
 export { ToolExecutor } from "./core/ToolExecutor";
@@ -58,6 +66,16 @@ export function initializeTools(): void {
   // Register analysis tools
   registry.register(new AnalyzeStructureTool());
   registry.register(new ReadFullDocumentTool());
+  
+  // Register bridge tools for legacy doc.* tools
+  registry.register(new DocSnapshotTool());
+  registry.register(new DocSearchTool());
+  registry.register(new DocEditTool());
+  
+  // Register planning tools
+  registry.register(new PlanAddTool());
+  registry.register(new PlanCompleteTool());
+  registry.register(new StatusUpdateTool());
   
   console.log(`[ToolSystem] Initialized ${registry.getAllTools().length} tools`);
   console.log(`[ToolSystem] Categories: ${registry.getCategories().join(", ")}`);

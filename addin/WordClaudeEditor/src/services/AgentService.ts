@@ -8,6 +8,7 @@ import {
   initializeTools, 
   getToolDefinitionsForAgent 
 } from "../tools";
+import { toolHost } from "./ToolHost";
 
 export interface AgentMessage {
   type: "content" | "tool_use" | "complete" | "error";
@@ -27,6 +28,8 @@ class AgentServiceClass {
   private toolExecutor: ToolExecutor;
   private toolRegistry: ToolRegistry;
   private currentAbortController: AbortController | null = null;
+  private toolBridgeSecret: string = "79e7fbce-0788-4308-9638-d49c2f860cdc"; // Same as backend TOOL_BRIDGE_SECRET
+  private currentSessionId: string | null = null;
   
   constructor() {
     // Initialize the tool system
@@ -90,7 +93,8 @@ class AgentServiceClass {
       const response = await fetch(`${this.backendUrl}/health`, {
         method: "GET",
         headers: {
-          "Accept": "application/json"
+          "Accept": "application/json",
+          "Authorization": `Bearer ${this.toolBridgeSecret}`
         }
       });
       
@@ -140,7 +144,8 @@ class AgentServiceClass {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Accept": "text/event-stream"
+          "Accept": "text/event-stream",
+          "Authorization": `Bearer ${this.toolBridgeSecret}`
         },
         body: JSON.stringify({
           messages: [{ role: "user", content: userPrompt }],
@@ -198,8 +203,13 @@ class AgentServiceClass {
             try {
               const message = JSON.parse(data);
               
+              // Handle session message
+              if (message.type === "session") {
+                this.currentSessionId = message.data.sessionId;
+                console.log(`[AgentService] Session ID: ${this.currentSessionId}`);
+              }
               // Handle tool use messages
-              if (message.type === "tool_use") {
+              else if (message.type === "tool_use") {
                 // Check cancellation before tool execution
                 if (signal.aborted) {
                   console.log("[AgentService] Cancelled before tool execution");
@@ -236,11 +246,13 @@ class AgentServiceClass {
                       const response = await fetch(`${this.backendUrl}/api/agent/tool-result`, {
                         method: "POST",
                         headers: {
-                          "Content-Type": "application/json"
+                          "Content-Type": "application/json",
+                          "Authorization": `Bearer ${this.toolBridgeSecret}`
                         },
                         body: JSON.stringify({
                           toolUseId: message.data.id,
-                          result: result
+                          result: result,
+                          sessionId: this.currentSessionId
                         })
                       });
                       
@@ -356,7 +368,8 @@ class AgentServiceClass {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Accept": "text/event-stream"
+          "Accept": "text/event-stream",
+          "Authorization": `Bearer ${this.toolBridgeSecret}`
         },
         body: JSON.stringify({
           messages,
@@ -409,21 +422,32 @@ class AgentServiceClass {
             try {
               const message = JSON.parse(data);
               
+              // Handle session message
+              if (message.type === "session") {
+                this.currentSessionId = message.data.sessionId;
+                console.log(`[AgentService] Session ID: ${this.currentSessionId}`);
+              }
+              // Also handle "done" type message from backend
+              else if (message.type === "done") {
+                if (onComplete) onComplete();
+                this.currentAbortController = null;
+                return;
+              }
+              
               // Handle different message types
               if (message.type === "tool_use") {
-                // Execute tool locally
-                console.log(`[AgentService] Executing tool: ${message.data.name}`);
+                console.log(`[AgentService] Received tool call: ${message.data.name}`);
+                
+                // Use ToolExecutor for dynamic tool execution
                 const toolResult = await this.toolExecutor.execute(
                   message.data.name,
-                  message.data.input,
+                  message.data.args || message.data.input || {},
                   { trackChanges: true }
                 );
                 
                 console.log(`[AgentService] Tool ${message.data.name} result:`, {
-                  success: toolResult.success,
-                  hasMessage: !!toolResult.message,
-                  messageLength: toolResult.message?.length,
-                  hasData: !!toolResult.data
+                  success: toolResult?.success,
+                  hasData: !!toolResult?.data
                 });
                 
                 // Send result back to backend
@@ -434,12 +458,13 @@ class AgentServiceClass {
                   onToolUse({
                     id: message.data.id,
                     name: message.data.name,
-                    input: message.data.input,
+                    input: message.data.args || message.data.input,
                     result: toolResult
                   });
                 }
               } else if (message.type === "content") {
-                if (onContent) onContent(message.data.content);
+                // Backend sends 'text' field, not 'content'
+                if (onContent) onContent(message.data.text || message.data.content);
               } else if (message.type === "error") {
                 if (onError) onError(new Error(message.data.error));
               } else if (message.type === "complete") {
@@ -484,11 +509,13 @@ class AgentServiceClass {
       const response = await fetch(`${this.backendUrl}/api/agent/tool-result`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${this.toolBridgeSecret}`
         },
         body: JSON.stringify({
           toolUseId,
-          result
+          result,
+          sessionId: this.currentSessionId
         })
       });
       

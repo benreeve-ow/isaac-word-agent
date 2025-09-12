@@ -240,6 +240,9 @@ export const DocumentProcessor: React.FC<DocumentProcessorProps> = ({ mode }) =>
         },
         onContent: (content) => {
           setStreamContent((prev) => {
+            // Handle undefined or null content
+            if (!content) return prev;
+            
             // Check if this looks like the start of a new paragraph/thought
             const trimmedContent = content.trim();
             const prevEndsWithPeriod = prev.trim().endsWith('.');

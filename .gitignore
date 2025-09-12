@@ -89,6 +89,7 @@ backend/dist/
 backend/build/
 backend/memory.db
 backend/*.db
+backend/traces/
 
 # Add-in specific
 addin/node_modules/
@@ -122,3 +123,4 @@ Desktop.ini
 .Trash-*
 
 .claude/*
+backend/traces/*

@@ -3,7 +3,6 @@ import { buildUDVFromDocument } from "./UnifiedDoc/ooxmlToUDV";
 import { udvInstance, UDVPath } from "./UnifiedDoc/UnifiedDoc";
 
 export class ToolHost {
-  private eventSource: EventSource | null = null;
   private baseUrl: string;
   private secret: string;
   private hitMap: Map<string, { path: UDVPath; offStart: number; offEnd: number }> = new Map();
@@ -14,38 +13,16 @@ export class ToolHost {
     this.secret = "79e7fbce-0788-4308-9638-d49c2f860cdc";
   }
 
-  async connect() {
-    const url = `${this.baseUrl}/agent/stream`;
-    this.eventSource = new EventSource(url);
-
-    this.eventSource.addEventListener("toolCall", async (event) => {
-      const data = JSON.parse(event.data);
-      await this.handleToolCall(data);
-    });
-
-    this.eventSource.addEventListener("error", (error) => {
-      console.error("SSE Error:", error);
-      this.reconnect();
-    });
-  }
-
-  private async reconnect() {
-    this.disconnect();
-    setTimeout(() => this.connect(), 5000);
-  }
-
-  disconnect() {
-    if (this.eventSource) {
-      this.eventSource.close();
-      this.eventSource = null;
-    }
-  }
-
-  private async handleToolCall(call: { id: string; tool: string; payload: any }) {
+  async handleToolCall(call: { id: string; tool: string; payload: any }): Promise<any> {
+    console.log("[ToolHost] Handling tool call:", call.tool, "with payload:", call.payload);
     try {
       let result: any;
       
-      switch (call.tool) {
+      // Mastra converts dots to underscores when streaming tool names
+      // Convert back to dots to match our handler naming convention
+      const toolName = call.tool.replace(/_/g, '.');
+      
+      switch (toolName) {
         case "doc.snapshot":
           result = await this.handleSnapshot(call.payload);
           break;
@@ -65,12 +42,12 @@ export class ToolHost {
           result = { success: true };
           break;
         default:
-          throw new Error(`Unknown tool: ${call.tool}`);
+          throw new Error(`Unknown tool: ${toolName} (original: ${call.tool})`);
       }
 
-      await this.sendToolResult(call.id, true, result);
+      return { success: true, data: result };
     } catch (error: any) {
-      await this.sendToolResult(call.id, false, null, error.message);
+      return { success: false, error: error.message };
     }
   }
 
@@ -124,6 +101,16 @@ export class ToolHost {
         }
         
         case "insertBeforeHitId": {
+          // Handle special hit IDs for empty documents
+          if (op.hitId === "doc-start" || op.hitId === "doc-end") {
+            // For doc-start, insert at beginning; for doc-end, insert at end
+            const body = context.document.body;
+            const location = op.hitId === "doc-start" ? Word.InsertLocation.start : Word.InsertLocation.end;
+            body.insertText(op.newText, location);
+            await context.sync();
+            return { success: true, operation: "insertBefore", message: `Inserted at ${op.hitId}` };
+          }
+          
           const hitInfo = this.hitMap.get(op.hitId);
           if (!hitInfo) throw new Error(`Hit ID not found: ${op.hitId}`);
           
@@ -140,6 +127,16 @@ export class ToolHost {
         }
         
         case "insertAfterHitId": {
+          // Handle special hit IDs for empty documents
+          if (op.hitId === "doc-start" || op.hitId === "doc-end") {
+            // For doc-start, insert at beginning; for doc-end, insert at end
+            const body = context.document.body;
+            const location = op.hitId === "doc-start" ? Word.InsertLocation.start : Word.InsertLocation.end;
+            body.insertText(op.newText, location);
+            await context.sync();
+            return { success: true, operation: "insertAfter", message: `Inserted at ${op.hitId}` };
+          }
+          
           const hitInfo = this.hitMap.get(op.hitId);
           if (!hitInfo) throw new Error(`Hit ID not found: ${op.hitId}`);
           
@@ -177,20 +174,6 @@ export class ToolHost {
     });
   }
 
-  private async sendToolResult(id: string, ok: boolean, data?: any, error?: string) {
-    const response = await fetch(`${this.baseUrl}/tool-result`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${this.secret}`
-      },
-      body: JSON.stringify({ id, ok, data, error })
-    });
-    
-    if (!response.ok) {
-      throw new Error(`Failed to send tool result: ${response.statusText}`);
-    }
-  }
 }
 
 export const toolHost = new ToolHost();

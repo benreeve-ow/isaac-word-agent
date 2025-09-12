@@ -3,9 +3,7 @@ import { anthropic } from "@ai-sdk/anthropic";
 import { getMemory } from "./memory";
 import { planTools } from "./tools/planTool";
 import { statusTools } from "./tools/statusTool";
-import { searchTools } from "./tools/searchTool";
-import { editTools } from "./tools/editTool";
-import { snapshotTools } from "./tools/snapshotTool";
+import { frontendPassthroughTools } from "./tools/frontendPassthrough";
 import fs from "node:fs";
 import path from "node:path";
 
@@ -19,9 +17,7 @@ export const wordAgent = new Agent({
   tools: {
     ...planTools,
     ...statusTools,
-    ...searchTools,
-    ...editTools,
-    ...snapshotTools,
+    ...frontendPassthroughTools,
   },
   // maxSteps: 8, // Not a valid property for Mastra Agent
 });
