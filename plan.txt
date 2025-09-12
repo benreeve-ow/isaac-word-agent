@@ -1,0 +1,145 @@
+# CODEBASE REFACTORING PLAN
+# ============================
+# Follow these steps sequentially. Check off completed items with [✓]
+
+## PHASE 1: REMOVE DEAD CODE (30% size reduction) ✅ COMPLETED
+## ------------------------------------------------
+
+### [✓] 1.1 Delete Duplicate Loggers
+- [✓] Delete file: backend/src/services/improvedTraceLogger.ts
+- [✓] Keep: backend/src/services/traceLogger.ts
+- [✓] Search and replace any imports of improvedTraceLogger with traceLogger
+
+### [✓] 1.2 Delete Unused Bridge System
+- [✓] Delete file: backend/src/bridge/toolBus.ts
+- [✓] Delete file: backend/src/bridge/schema.ts
+- [✓] Delete folder if empty: backend/src/bridge/
+- [✓] Also deleted: backend/src/routes/tools.ts (unused)
+
+### [✓] 1.3 Delete ALL Legacy Frontend Tools (~2000 lines!)
+- [✓] Delete folder: addin/WordClaudeEditor/src/tools/editing/
+- [✓] Delete folder: addin/WordClaudeEditor/src/tools/formatting/
+- [✓] Delete folder: addin/WordClaudeEditor/src/tools/structure/
+- [✓] Delete folder: addin/WordClaudeEditor/src/tools/review/
+- [✓] Delete folder: addin/WordClaudeEditor/src/tools/analysis/
+- [✓] Delete folder: addin/WordClaudeEditor/src/tools/bridge/
+- [✓] Delete folder: addin/WordClaudeEditor/src/tools/planning/
+- [✓] Update addin/WordClaudeEditor/src/tools/index.ts to remove all imports
+
+### [✓] 1.4 Verify Nothing Broke
+- [✓] Run: cd backend && npm start - SUCCESS
+- [✓] Run: cd addin/WordClaudeEditor && npm build - SUCCESS
+- [✓] Test basic agent functionality in Word - PENDING USER TEST
+
+## PHASE 2: API REORGANIZATION
+## ----------------------------
+
+### [ ] 2.1 Create New API Structure
+- [ ] Keep existing routes but organize better in server.ts:
+  - /api/agent/* - Agent streaming endpoints (keep as is)
+  - /api/text/* - Text improvement endpoints (rename from /api/claude/*)
+  - /api/tools/* - Tool execution endpoints
+
+### [ ] 2.2 Update Route Files
+- [ ] Rename: backend/src/routes/improve.ts → backend/src/routes/text.ts
+- [ ] Update imports in server.ts
+- [ ] Update all /api/claude references to /api/text in:
+  - [ ] Frontend: addin/WordClaudeEditor/src/services/ClaudeService.ts
+  - [ ] Backend: server.ts
+
+### [ ] 2.3 Test All Endpoints
+- [ ] Test /api/text/improve
+- [ ] Test /api/text/implement-comment
+- [ ] Test /api/text/analyze-style
+- [ ] Test /api/agent/stream
+
+## PHASE 3: TOOL SYSTEM CONSOLIDATION
+## -----------------------------------
+
+### [ ] 3.1 Merge Backend Tool Definitions
+- [ ] Create new file: backend/src/tools/definitions.ts
+- [ ] Copy all tools from backend/src/mastra/tools/contextTools.ts
+- [ ] Add missing tools from backend/src/mastra/tools/frontendPassthrough.ts
+- [ ] Delete duplicate tool definitions (keep best version of each)
+
+### [ ] 3.2 Update Tool Imports
+- [ ] Update backend/src/mastra/agent.word.ts to import from new location
+- [ ] Delete old files:
+  - [ ] backend/src/mastra/tools/frontendPassthrough.ts
+  - [ ] backend/src/mastra/tools/contextTools.ts
+
+### [ ] 3.3 Clean Frontend Tool System
+- [ ] Keep only context folder tools in frontend
+- [ ] Update addin/WordClaudeEditor/src/tools/index.ts
+- [ ] Ensure tool names match exactly between frontend and backend
+
+### [ ] 3.4 Create Tool Type Definitions
+- [ ] Create: shared/types/tools.ts with:
+  - Tool input/output types
+  - Tool names enum
+  - Shared interfaces
+
+## PHASE 4: STREAMING SIMPLIFICATION
+## ----------------------------------
+
+### [ ] 4.1 Simplify Tool Bridge Pattern
+- [ ] Review backend/src/mastra/tools/toolBridge.ts
+- [ ] Remove unnecessary EventEmitter complexity
+- [ ] Simplify to direct promise-based approach
+
+### [ ] 4.2 Clean Stream Handler
+- [ ] Simplify backend/src/mastra/streamHandler.ts
+- [ ] Remove redundant event listeners
+- [ ] Consolidate tool result handling
+
+### [ ] 4.3 Update Frontend SSE Handler
+- [ ] Simplify addin/WordClaudeEditor/src/services/AgentService.ts
+- [ ] Remove complex tool result bridging
+- [ ] Direct tool execution and response
+
+## PHASE 5: FINAL CLEANUP
+## ----------------------
+
+### [ ] 5.1 Remove Unused Dependencies
+- [ ] Run: cd backend && npm prune
+- [ ] Run: cd addin/WordClaudeEditor && npm prune
+- [ ] Check package.json for unused packages
+
+### [ ] 5.2 Consolidate Configuration
+- [ ] Merge duplicate config into single location
+- [ ] Update .env.example with all required vars
+- [ ] Document any new configuration
+
+### [ ] 5.3 Update Documentation
+- [ ] Update README.md with new structure
+- [ ] Update CLAUDE.md with refactored paths
+- [ ] Add architecture diagram if helpful
+
+## VALIDATION CHECKLIST
+## --------------------
+
+After each phase, verify:
+- [ ] Backend starts without errors
+- [ ] Frontend loads in Word
+- [ ] Agent can execute basic commands
+- [ ] Text improvement works
+- [ ] Tool execution works
+- [ ] No TypeScript errors (npm run build)
+
+## NOTES
+------
+- Skip unified document model for now (separate feature)
+- Each phase should take 1-2 hours max
+- Commit after each phase completes
+- If something breaks, revert and debug before continuing
+
+## COMPLETION METRICS
+--------------------
+Expected results:
+- Code reduction: ~40% (3000+ lines removed)
+- Folders deleted: 10+
+- Files deleted: 40+
+- Clarity improvement: Massive
+
+Last updated: 2025-01-13
+Status: Ready to begin

@@ -112,7 +112,6 @@ open https://localhost:3000/health
 
 ## Testing & Debugging
 
-- Browser testing: Open `addin/WordClaudeEditor/test-browser.html`
 - VS Code debugging: F5 in add-in directory → "Debug in Browser"
 - Debug console: Built into add-in UI (auto-appears on errors)
 - Backend health: `curl -k https://localhost:3000/health`

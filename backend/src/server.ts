@@ -10,7 +10,6 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 // Import routes AFTER env vars are loaded
 import agentRoutes from "./routes/agent";
-import toolRoutes from "./routes/tools";
 import improveRoutes from "./routes/improve";
 
 const app = express();
@@ -26,7 +25,6 @@ app.use(express.json());
 // Routes - Mastra only
 app.use("/api/agent", agentRoutes);
 app.use("/api/claude", improveRoutes);  // Legacy endpoints for Edit Selection
-app.use("/", toolRoutes);
 
 // Health check
 app.get("/health", (req, res) => {

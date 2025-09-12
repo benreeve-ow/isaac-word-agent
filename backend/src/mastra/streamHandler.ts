@@ -125,9 +125,9 @@ export class MastraStreamHandler {
         console.log(`[Final Text Content] ${accumulatedText.substring(0, 500)}...`);
       }
       
-      // Send completion
+      // Send completion (frontend expects "complete" not "done")
       this.res.write(`data: ${JSON.stringify({ 
-        type: "done",
+        type: "complete",
         data: {}
       })}\n\n`);
       

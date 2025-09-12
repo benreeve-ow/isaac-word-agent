@@ -16,29 +16,7 @@ import { AddCommentTool as ContextAddCommentTool } from "./context/AddCommentToo
 import { ResolveCommentTool } from "./context/ResolveCommentTool";
 import { EditTableTool as ContextEditTableTool } from "./context/EditTableTool";
 
-// Import legacy tools (keeping for backward compatibility)
-import { SearchDocumentTool } from "./editing/SearchDocumentTool";
-import { EditContentTool } from "./editing/EditContentTool";
-import { InsertContentTool } from "./editing/InsertContentTool";
-import { ApplyFormattingTool } from "./formatting/ApplyFormattingTool";
-import { ApplyStyleTool } from "./formatting/ApplyStyleTool";
-import { AddCommentTool } from "./review/AddCommentTool";
-import { GetCommentsTool } from "./review/GetCommentsTool";
-import { InsertTableTool } from "./structure/InsertTableTool";
-import { EditTableTool } from "./structure/EditTableTool";
-import { DeleteTableTool } from "./structure/DeleteTableTool";
-import { FindTablesTool } from "./structure/FindTablesTool";
-import { InsertBreakTool } from "./structure/InsertBreakTool";
-import { AnalyzeStructureTool } from "./analysis/AnalyzeStructureTool";
-import { ReadFullDocumentTool } from "./analysis/ReadFullDocumentTool";
-
-// Import bridge tools for legacy doc.* and plan.* tools
-import { DocSnapshotTool } from "./bridge/DocSnapshotTool";
-import { DocSearchTool } from "./bridge/DocSearchTool";
-import { DocEditTool } from "./bridge/DocEditTool";
-import { PlanAddTool } from "./planning/PlanAddTool";
-import { PlanCompleteTool } from "./planning/PlanCompleteTool";
-import { StatusUpdateTool } from "./planning/StatusUpdateTool";
+// All legacy tools have been removed - using only context-based tools
 
 // Export core classes
 export { ToolRegistry } from "./core/ToolRegistry";
@@ -65,10 +43,8 @@ export function initializeTools(): void {
   registry.register(new ResolveCommentTool());
   registry.register(new ContextEditTableTool());
   
-  // Register planning tools (these don't conflict)
-  registry.register(new PlanAddTool());
-  registry.register(new PlanCompleteTool());
-  registry.register(new StatusUpdateTool());
+  // Note: Planning tools were removed with legacy tools
+  // All tool execution now happens through context-based tools
   
   // Note: Not registering legacy tools to avoid conflicts and confusion
   // The backend only knows about the context-based tools
