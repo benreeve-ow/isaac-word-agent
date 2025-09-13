@@ -151,12 +151,10 @@ export const tools = {
 
   "resolve_comment": createFrontendTool({
     id: "resolve_comment",
-    description: "Reply to, accept, or reject a review comment. Use 'reply' to add a response without changing text.",
+    description: "Mark a review comment as resolved/completed, optionally with a reply",
     inputSchema: z.object({
       commentIndex: z.number().describe("The index of the comment to resolve (starting from 0)"),
-      action: z.enum(["accept", "reject", "implement", "reply"]).describe("How to handle the comment - 'reply' adds a response, 'accept/implement' changes text, 'reject' dismisses"),
-      replacementText: z.string().optional().describe("The text to replace in document (for 'accept' and 'implement' actions)"),
-      replyText: z.string().optional().describe("Text to add as a reply to the comment thread (for any action, required for 'reply')")
+      replyText: z.string().optional().describe("Optional text to add as a reply before resolving")
     }),
     outputSchema: z.object({
       success: z.boolean(),

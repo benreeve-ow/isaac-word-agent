@@ -11,6 +11,7 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 // Import routes AFTER env vars are loaded
 import agentRoutes from "./routes/agent";
 import textRoutes from "./routes/text";
+import { tokenMetrics } from "./services/tokenMetrics";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -29,6 +30,26 @@ app.use("/api/text", textRoutes);    // Text improvement endpoints
 // Health check
 app.get("/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
+});
+
+// Token metrics endpoint
+app.get("/api/metrics/tokens", (req, res) => {
+  const report = tokenMetrics.generateReport();
+  const typeMetrics = tokenMetrics.getOperationTypeMetrics();
+  const topConsumers = tokenMetrics.getTopConsumers(10);
+  
+  res.json({
+    report,
+    typeMetrics: Array.from(typeMetrics.entries()),
+    topConsumers,
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Token metrics report (text format)
+app.get("/api/metrics/report", (req, res) => {
+  res.type('text/plain');
+  res.send(tokenMetrics.generateReport());
 });
 
 // HTTPS setup using Office add-in dev certificates

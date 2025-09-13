@@ -8,6 +8,7 @@ interface Message {
 interface MemoryProcessor {
   process(messages: Message[]): Promise<Message[]>;
 }
+
 import { countTokens } from "../../services/tokenCount";
 import Anthropic from "@anthropic-ai/sdk";
 
@@ -24,7 +25,7 @@ export class SummarizeTail implements MemoryProcessor {
 
     const total = await countTokens({ 
       messages: [...head, ...tail].map(m => ({
-        role: m.role as any, 
+        role: m.role as "user" | "assistant" | "system", 
         content: m.content
       })) 
     });
@@ -59,7 +60,7 @@ Return a concise narrative with bullet anchors and decisions.`;
     // final guard
     const after = await countTokens({ 
       messages: compacted.map(m => ({
-        role: m.role as any, 
+        role: m.role as "user" | "assistant" | "system", 
         content: m.content
       })) 
     });

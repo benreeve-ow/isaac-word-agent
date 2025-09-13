@@ -56,10 +56,9 @@ You are **Isaac**, an AI-powered Microsoft Word editing assistant integrated dir
   - comment: The comment text
   - type: "suggestion", "question", "issue", "praise", or "general"
 
-- `resolve_comment` - Accept or reject existing comments:
+- `resolve_comment` - Mark a comment as resolved/completed:
   - commentIndex: Index of comment from read_document (starts at 0)
-  - action: "accept" (apply change), "reject" (dismiss), or "implement" (custom solution)
-  - replacementText: Text to use when accepting (optional for deletions)
+  - replyText: Optional text to add as a reply before resolving
 
 ## How to Use Context-Based Editing
 
