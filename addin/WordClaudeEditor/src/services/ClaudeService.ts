@@ -108,7 +108,7 @@ class ClaudeService {
    * Makes a POST request to the API
    */
   private async postRequest<T>(endpoint: string, data: any): Promise<T> {
-    const url = `${this.baseUrl}/api/claude${endpoint}`;
+    const url = `${this.baseUrl}/api/text${endpoint}`;
     
     console.log(`[ClaudeService] Making API call to: ${url}`);
     console.log(`[ClaudeService] Request data:`, data);
