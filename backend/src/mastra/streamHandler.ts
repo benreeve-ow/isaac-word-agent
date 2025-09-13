@@ -20,7 +20,6 @@ export class MastraStreamHandler {
     
     // Listen for frontend tool execution requests from the tool bridge
     const executeHandler = (data: any) => {
-      console.log(`[StreamHandler] Sending tool to frontend: ${data.toolName} (${data.toolCallId})`);
       // Send to frontend via SSE
       this.res.write(`data: ${JSON.stringify({
         type: 'tool_use',
@@ -46,8 +45,6 @@ export class MastraStreamHandler {
    * Handle incoming tool results from the frontend
    */
   handleToolResult(toolCallId: string, result: any) {
-    console.log(`[StreamHandler] Received tool result for ${toolCallId}:`, result);
-    
     // Bridge the result back to the waiting tool via the event emitter
     toolResultBridge.emit(toolCallId, result);
   }
@@ -87,42 +84,26 @@ export class MastraStreamHandler {
                             
           if (textDelta) {
             accumulatedText += textDelta;
-            console.log(`[Text Delta] Streaming text: "${textDelta.substring(0, 100)}..."`);
             
             // Send text to frontend
             this.res.write(`data: ${JSON.stringify({ 
               type: "content",
               data: { text: textDelta }
             })}\n\n`);
-          } else {
-            // Log for debugging if we're missing text
-            console.log("[Text Delta] Chunk structure (no text found):", JSON.stringify(chunk, null, 2));
           }
           
         } else if (chunk.type === "tool-call") {
-          const payload = (chunk as any).payload;
-          console.log("[StreamHandler] Tool call from Mastra:", {
-            toolName: payload?.toolName,
-            args: payload?.args,
-            toolCallId: payload?.toolCallId
-          });
-          
-          // The tool bridge will handle sending this to the frontend if needed
-          // Backend-only tools (like plan.add) will execute immediately
-          // Frontend tools will be handled by the bridge pattern
-          console.log(`[StreamHandler] Tool call detected: ${payload?.toolName}`);
+          // Tool calls are handled automatically by the tool bridge
           
         } else if (chunk.type === "tool-result") {
           const payload = (chunk as any).payload;
-          console.log("Tool result in stream:", payload);
           traceLogger.logToolResult(payload?.toolName, payload?.result, payload?.toolCallId);
         }
       }
       
-      // Log final accumulated text
-      console.log(`[Final Text] Total accumulated: ${accumulatedText.length} chars`);
-      if (accumulatedText) {
-        console.log(`[Final Text Content] ${accumulatedText.substring(0, 500)}...`);
+      // Log final accumulated text for debugging if needed
+      if (process.env.DEBUG) {
+        console.log(`[Final Text] Total: ${accumulatedText.length} chars`);
       }
       
       // Send completion (frontend expects "complete" not "done")

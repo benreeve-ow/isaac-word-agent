@@ -110,7 +110,7 @@ Select text and provide specific improvement instructions:
 
 ## 🏗️ Architecture
 
-### System Overview (Mastra-based)
+### System Overview
 
 ```
 ┌─────────────┐     ┌──────────────┐     ┌─────────────┐     ┌─────────────┐
@@ -120,72 +120,51 @@ Select text and provide specific improvement instructions:
                             │                     │                     │
                             ▼                     ▼                     ▼
                     ┌──────────────┐     ┌─────────────┐     ┌─────────────┐
-                    │   ToolHost   │◀────│  Tool Bus   │     │  Claude AI  │
-                    │  (SSE/UDV)   │     │    (SSE)    │     │    (API)    │
+                    │  Context     │◀────│ Tool Bridge │     │  Claude AI  │
+                    │   Tools      │     │    (SSE)    │     │    (API)    │
                     └──────────────┘     └─────────────┘     └─────────────┘
 ```
 
 ### Key Components
 
-- **Frontend**: React task pane with ToolHost for Word operations
-- **UDV**: Unified Document View merging paragraphs/tables in reading order
+- **Frontend**: React task pane with context tools for Word operations
 - **Backend**: Express.js with Mastra agent orchestration
-- **Tool Bus**: SSE bridge between agent tools and Word operations
-- **Memory**: Persistent working memory with plan/status tracking
-
-### Unified Document View (UDV)
-
-The UDV system solves table-adjacent editing issues by:
-1. Parsing document OOXML to maintain true reading order
-2. Merging paragraphs and tables into a unified structure
-3. Providing precise range resolution for edits near tables
-4. Using stable hit IDs for reliable multi-step operations
+- **Tool Bridge**: SSE-based async communication between agent and frontend
+- **Memory**: SQLite-based persistent memory with automatic compression
 
 ## 🛠️ Tool System
 
-Isaac includes 15+ specialized tools:
+Isaac includes 25+ specialized tools:
 
 | Category | Tools | Description |
 |----------|-------|-------------|
-| **Editing** | `search_document`, `edit_content`, `insert_content` | Find and modify text |
-| **Formatting** | `format_text`, `apply_style` | Apply formatting and styles |
-| **Structure** | `insert_table`, `insert_break`, `find_tables` | Manage document structure |
-| **Review** | `add_comment`, `get_comments` | Add and read review comments |
-| **Analysis** | `analyze_structure`, `read_full_document` | Analyze document content |
-| **Planning** | `plan.add`, `plan.list`, `plan.complete` | Manage task planning |
-| **Status** | `status.get`, `status.tick` | Track operation progress |
+| **Reading** | `read_selection`, `read_full_document`, `get_document_stats` | Read document content |
+| **Editing** | `search_document`, `edit_content`, `insert_content`, `replace_all` | Find and modify text |
+| **Tables** | `insert_table`, `edit_table_cell`, `find_tables` | Manage tables |
+| **Comments** | `add_comment`, `get_comments`, `resolve_comment` | Review and feedback |
+| **Search** | `fuzzy_search`, `search_with_options` | Advanced search capabilities |
+| **Advanced** | `get_paragraph_ids`, `edit_by_id`, `analyze_structure` | Precise document control |
 
-### Creating Custom Tools
+### Tool Implementation
 
-```typescript
-// Example: Create a new tool in backend/src/mastra/tools/
-export const customTools = {
-  "custom_tool": {
-    description: "Does something custom",
-    parameters: z.object({
-      text: z.string().describe("Input text")
-    }),
-    handler: async ({ text }, context) => {
-      // Tool implementation
-      return { success: true, result: "Done!" };
-    }
-  }
-};
-```
+Tools are defined in two places:
+- **Backend**: `/backend/src/tools/definitions.ts` - Tool schemas for Mastra
+- **Frontend**: `/addin/WordClaudeEditor/src/tools/context/` - Actual Word operations
+
+The Tool Bridge handles async communication between them via SSE.
 
 ## 📡 API Endpoints
 
-### Agent Endpoints (Mastra)
+### Agent Endpoints
 
-- `POST /agent/run` - Single-shot agent execution
-- `GET /agent/stream` - SSE streaming for real-time tool execution
-- `POST /tool-result` - Tool execution results from add-in
+- `POST /api/agent/stream` - SSE streaming for agent interactions
+- `POST /api/agent/tool-result` - Tool execution results from frontend
 
-### Legacy Claude Endpoints
+### Text Processing Endpoints
 
-- `POST /api/claude/improve` - Direct text improvement
-- `POST /api/claude/implement-comment` - Apply reviewer comments
-- `POST /api/claude/analyze-style` - Analyze writing style
+- `POST /api/text/improve` - Direct text improvement
+- `POST /api/text/implement-comment` - Apply reviewer comments
+- `POST /api/text/analyze-style` - Analyze writing style
 
 ### Health Check
 
@@ -299,29 +278,23 @@ npm run validate    # Validate manifest
 isaac-word-agent/
 ├── backend/                    # Express.js API server
 │   ├── src/
-│   │   ├── mastra/            # Mastra agent & tools
+│   │   ├── mastra/            # Mastra agent framework
 │   │   │   ├── agent.word.ts  # Main agent definition
-│   │   │   ├── memory.ts      # Working memory config
-│   │   │   ├── tools/         # Tool implementations
+│   │   │   ├── streamHandler.ts # SSE stream handling
+│   │   │   ├── tools/         # Tool bridge implementation
 │   │   │   ├── compressors/   # Memory compression
 │   │   │   └── prompts/       # System prompts
-│   │   ├── bridge/            # Tool Bus for SSE
+│   │   ├── tools/             # Tool definitions
 │   │   ├── routes/            # API endpoints
-│   │   └── services/          # Token counting, etc
-│   ├── memory.db              # SQLite for persistence
-│   └── tsconfig.json          # TypeScript config
+│   │   └── services/          # Shared services
+│   └── memory.db              # SQLite persistence
 ├── addin/WordClaudeEditor/     # Word add-in
 │   ├── src/
-│   │   ├── services/
-│   │   │   ├── ToolHost.ts    # SSE client for tools
-│   │   │   ├── UnifiedDoc/    # UDV implementation
-│   │   │   │   ├── UnifiedDoc.ts    # UDV core logic
-│   │   │   │   └── ooxmlToUDV.ts    # OOXML parser
-│   │   │   └── Status.ts      # Status tracking
-│   │   ├── tools/             # Legacy tool implementations
+│   │   ├── services/          # Core services
+│   │   ├── tools/
+│   │   │   └── context/       # Word operation tools
 │   │   ├── modes/             # Processing modes
-│   │   ├── prompts/           # Prompt templates
-│   │   └── taskpane/          # React UI components
+│   │   └── taskpane/          # React UI
 │   └── manifest.xml           # Add-in manifest
 └── CLAUDE.md                  # AI instructions
 ```

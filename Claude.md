@@ -14,9 +14,10 @@ Microsoft Word add-in that integrates Claude AI for document editing with track 
 ```bash
 cd backend
 npm install
-npm start           # HTTPS server (production, default)
+npm start           # HTTPS server with TypeScript
 npm run dev         # HTTPS with nodemon (auto-reload)
-npm run start:http  # HTTP server (legacy, use only if HTTPS fails)
+npm run build       # Compile TypeScript
+npm run serve       # Run compiled JavaScript
 ```
 
 ### Word Add-in
@@ -53,17 +54,20 @@ await Word.run(async (context) => {
 
 ## Core API Endpoints
 
-- `POST /api/claude/improve` - Improve selected text
+- `POST /api/text/improve` - Improve selected text
   - Body: `{ text, contextBefore, contextAfter, userPrompt, systemPrompt }`
   
-- `POST /api/claude/implement-comment` - Apply reviewer comments
+- `POST /api/text/implement-comment` - Apply reviewer comments
   - Body: `{ text, comment, context, systemPrompt }`
 
-- `POST /api/claude/analyze-style` - Analyze document writing style
+- `POST /api/text/analyze-style` - Analyze document writing style
   - Body: `{ sampleText, sampleSize }`
 
 - `POST /api/agent/stream` - Stream agent responses with tool use
   - Body: `{ messages, documentContext }`
+
+- `POST /api/agent/tool-result` - Submit tool execution results
+  - Body: `{ toolCallId, sessionId, result }`
 
 ## Key Services
 
@@ -77,10 +81,11 @@ await Word.run(async (context) => {
 - Handles token counting and context management
 - Methods: `improveText()`, `implementComment()`, `analyzeStyle()`
 
-### AgentService (`backend/services/agent-service.js`)
-- Autonomous document editing with Claude tools
-- Tool definitions: search_document, edit_content, insert_content, analyze_structure
-- Streaming responses with iterative tool use
+### Mastra Agent (`backend/src/mastra/agent.word.ts`)
+- Autonomous document editing with 25+ specialized tools
+- Tool Bridge for async frontend-backend communication
+- Memory management with automatic compression
+- SSE streaming for real-time updates
 
 ## Common Issues & Solutions
 
@@ -98,9 +103,13 @@ await Word.run(async (context) => {
 
 ## Environment Setup
 
-1. Create `backend/.env`:
+1. Create `.env` in root directory:
 ```
 ANTHROPIC_API_KEY=sk-ant-api...
+MODEL=claude-3-5-sonnet-20241022
+CONTEXT_INPUT_BUDGET_TOKENS=160000
+CONTEXT_OUTPUT_BUDGET_TOKENS=40000
+MEMORY_URL=file:./memory.db
 PORT=3000
 ```
 
@@ -115,11 +124,14 @@ open https://localhost:3000/health
 - VS Code debugging: F5 in add-in directory → "Debug in Browser"
 - Debug console: Built into add-in UI (auto-appears on errors)
 - Backend health: `curl -k https://localhost:3000/health`
+- Memory inspection: View `backend/memory.db` with SQLite browser
 
 ## Architecture Notes
 
 - Frontend and backend are separate projects with independent package.json files
-- Backend uses streaming for agent responses to enable real-time tool use
+- Tool Bridge pattern enables async communication via SSE
+- Backend uses Mastra framework for agent orchestration
+- Memory persists in SQLite with automatic compression at 160k tokens
 - Word API has strict limits on search string length (150 chars max)
 - All document edits should preserve formatting and use track changes
-- Agent mode uses iterative tool calling with a maximum of 10 iterations
+- Agent mode uses iterative tool calling with a maximum of 10 steps
