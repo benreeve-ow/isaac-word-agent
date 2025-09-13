@@ -17,18 +17,24 @@ export class ResolveCommentTool implements ToolDefinition {
       type: "string",
       description: "How to resolve the comment",
       required: true,
-      enum: ["accept", "reject", "implement"]
+      enum: ["accept", "reject", "implement", "reply"]
     },
     {
       name: "replacementText",
       type: "string",
       description: "The text to use when accepting or implementing the comment (required for 'accept' and 'implement')",
       required: false
+    },
+    {
+      name: "replyText",
+      type: "string",
+      description: "Text to add as a reply to the comment thread (optional)",
+      required: false
     }
   ];
   
   async execute(params: any, _context?: ToolContext): Promise<ToolResult> {
-    const { commentIndex, action, replacementText } = params;
+    const { commentIndex, action, replacementText, replyText } = params;
     
     try {
       return await Word.run(async (context) => {
@@ -62,7 +68,26 @@ export class ResolveCommentTool implements ToolDefinition {
         const originalText = commentRange.text;
         const commentText = comment.content;
         
-        if (action === "accept" || action === "implement") {
+        // Add a reply to the comment if replyText is provided
+        if (replyText) {
+          comment.reply(replyText);
+          await context.sync();
+        }
+        
+        if (action === "reply") {
+          // Just add a reply without resolving or changing text
+          if (!replyText) {
+            return {
+              success: false,
+              error: "replyText is required when using 'reply' action"
+            };
+          }
+          
+          return {
+            success: true,
+            message: `Added reply to comment ${commentIndex + 1}: "${replyText.substring(0, 50)}..."`
+          };
+        } else if (action === "accept" || action === "implement") {
           if (!replacementText && action === "accept") {
             return {
               success: false,

@@ -3,7 +3,7 @@ import { anthropic } from "@ai-sdk/anthropic";
 import { getMemory } from "./memory";
 import { planTools } from "./tools/planTool";
 import { statusTools } from "./tools/statusTool";
-import { contextTools } from "./tools/contextTools";
+import { tools } from "../tools/definitions";
 import fs from "node:fs";
 import path from "node:path";
 
@@ -17,7 +17,7 @@ export const wordAgent = new Agent({
   tools: {
     ...planTools,
     ...statusTools,
-    ...contextTools,
+    ...tools,  // All document editing tools from unified definitions
   },
   // maxSteps: 8, // Not a valid property for Mastra Agent
 });
