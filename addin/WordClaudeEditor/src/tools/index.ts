@@ -4,6 +4,7 @@
 
 import { ToolRegistry } from "./core/ToolRegistry";
 import { ToolExecutor } from "./core/ToolExecutor";
+import { ToolDefinition } from "./core/ToolDefinition";
 
 // Import context-based tools (new simplified tools)
 import { ApplyStyleTool } from "./context/ApplyStyleTool";
@@ -67,12 +68,6 @@ export function initializeTools(): void {
   registry.register(new InsertFootnoteTool());
   registry.register(new InsertLinkTool());
   
-  // Note: Planning tools were removed with legacy tools
-  // All tool execution now happens through context-based tools
-  
-  // Note: Not registering legacy tools to avoid conflicts and confusion
-  // The backend only knows about the context-based tools
-  
   console.log(`[ToolSystem] Initialized ${registry.getAllTools().length} tools`);
   console.log(`[ToolSystem] Categories: ${registry.getCategories().join(", ")}`);
 }
@@ -86,8 +81,9 @@ export function getToolExecutor(): ToolExecutor {
 
 /**
  * Get tool definitions for the backend/agent
+ * @returns Array of tool definitions
  */
-export function getToolDefinitionsForAgent(): any[] {
+export function getToolDefinitionsForAgent(): ToolDefinition[] {
   const registry = ToolRegistry.getInstance();
   return registry.getToolDefinitions();
 }

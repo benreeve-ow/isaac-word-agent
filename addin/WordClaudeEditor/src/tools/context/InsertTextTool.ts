@@ -1,5 +1,10 @@
 import { ToolDefinition, ToolParameter, ToolContext, ToolResult } from "../core/ToolDefinition";
+import { InsertTextParams, ParamValidator, ToolExecutionResult } from "../core/types";
 
+/**
+ * Tool for inserting text at specific positions in a Word document.
+ * Supports insertion at document start/end or relative to anchor text.
+ */
 export class InsertTextTool implements ToolDefinition {
   name = "insert_text";
   description = "Insert text at the start, end, or relative to an anchor text in the document";
@@ -47,8 +52,21 @@ export class InsertTextTool implements ToolDefinition {
     required: ["position", "content"]
   };
   
-  async execute(params: any, _context?: ToolContext): Promise<ToolResult> {
-    const { position, anchor, content } = params;
+  /**
+   * Execute text insertion at the specified position in the document.
+   * @param params - Insertion parameters including position, anchor, and content
+   * @param _context - Optional execution context
+   * @returns Promise resolving to the execution result
+   */
+  async execute(params: unknown, _context?: ToolContext): Promise<ToolResult> {
+    // Validate and type the parameters
+    const typedParams = ParamValidator.validate<InsertTextParams>(
+      params,
+      ['position', 'content'],
+      'InsertTextTool'
+    );
+    
+    const { position, anchor, content } = typedParams;
     
     // Validate params
     if ((position === "after" || position === "before") && !anchor) {

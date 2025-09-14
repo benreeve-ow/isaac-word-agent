@@ -66,7 +66,9 @@ router.post("/clear-memory", checkAuth, async (req: Request, res: Response) => {
   }
 });
 
-// SSE streaming endpoint - accepts POST like the legacy system
+/**
+ * SSE streaming endpoint for agent responses with tool handling
+ */
 router.post("/stream", checkAuth, async (req: Request, res: Response) => {
   // Set SSE headers
   res.writeHead(200, {
