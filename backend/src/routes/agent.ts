@@ -3,6 +3,7 @@ import { wordAgent } from "../mastra/agent.word";
 import { MastraStreamHandler, streamHandlers } from "../mastra/streamHandler";
 import { countTokens } from "../services/tokenCount";
 import { traceLogger } from "../services/traceLogger";
+import { contextManager } from "../services/contextManager";
 import { z } from "zod";
 
 const router = Router();
@@ -76,7 +77,20 @@ router.post("/stream", checkAuth, async (req: Request, res: Response) => {
   });
   
   // Get data from request body
-  const { messages, documentContext, tools, mode } = req.body;
+  let { messages, documentContext, tools, mode } = req.body;
+  
+  // Analyze context before processing
+  const contextAnalysis = contextManager.analyzeContext(messages);
+  if (contextAnalysis.redundantReads > 0) {
+    console.log(`[ContextManager] Detected ${contextAnalysis.redundantReads} redundant document reads`);
+    console.log(`[ContextManager] Potential savings: ${contextAnalysis.potentialSavings} tokens`);
+    
+    // Deduplicate document reads to save tokens
+    messages = contextManager.deduplicateDocumentReads(messages);
+  }
+  
+  // Optimize for Anthropic's prompt caching
+  messages = contextManager.optimizeForCaching(messages);
   
   // Start a new trace session
   const sessionId = `stream-${Date.now()}`;
@@ -143,6 +157,27 @@ router.post("/tool-result", checkAuth, async (req: Request, res: Response) => {
   }
   
   res.json({ success: true });
+});
+
+// Context analysis endpoint - helps monitor context usage
+router.post("/context-status", checkAuth, async (req: Request, res: Response) => {
+  const { messages } = req.body;
+  
+  if (!messages) {
+    return res.status(400).json({ error: "Missing messages" });
+  }
+  
+  const analysis = contextManager.analyzeContext(messages);
+  const budget = Number(process.env.CONTEXT_INPUT_BUDGET_TOKENS ?? 160000);
+  
+  res.json({
+    ...analysis,
+    budget,
+    percentUsed: ((analysis.totalTokens / budget) * 100).toFixed(1),
+    recommendation: analysis.redundantReads > 0 
+      ? `Can save ~${analysis.potentialSavings} tokens by deduplicating ${analysis.redundantReads} document reads`
+      : "Context is optimized"
+  });
 });
 
 export default router;

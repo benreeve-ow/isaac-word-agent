@@ -187,11 +187,28 @@ export const tools = {
   
   "create_list": createFrontendTool({
     id: "create_list",
-    description: "Convert text to a bulleted or numbered list with customizable style",
+    description: "Convert a range of paragraphs into a properly formatted Word list",
     inputSchema: z.object({
-      anchor: z.string().describe("Text to convert to list (30-50 chars)"),
+      startAnchor: z.string().describe("Text from the FIRST list item (30-50 chars)"),
+      endAnchor: z.string().describe("Text from the LAST list item (30-50 chars)"),
       listType: z.enum(["bullet", "numbered"]).describe("Type of list"),
-      style: z.string().optional().describe("Bullet style (•, ◦, ▪) or numbering (1., a., i.)")
+      style: z.string().optional().describe("Bullet style or numbering format")
+    }),
+    outputSchema: z.object({
+      success: z.boolean(),
+      message: z.string().optional(),
+      error: z.string().optional()
+    })
+  }),
+
+  "adjust_list_level": createFrontendTool({
+    id: "adjust_list_level",
+    description: "Increase or decrease indentation level of list items",
+    inputSchema: z.object({
+      startAnchor: z.string().describe("Text from the first list item (30-50 chars)"),
+      endAnchor: z.string().optional().describe("Text from the last item, or leave empty for single item"),
+      direction: z.enum(["increase", "decrease"]).describe("Indent or outdent"),
+      levels: z.number().optional().describe("Number of levels to adjust (default: 1)")
     }),
     outputSchema: z.object({
       success: z.boolean(),
@@ -202,9 +219,10 @@ export const tools = {
 
   "set_alignment": createFrontendTool({
     id: "set_alignment",
-    description: "Set paragraph alignment (left, center, right, justify)",
+    description: "Set alignment for one or more paragraphs",
     inputSchema: z.object({
-      anchor: z.string().describe("Text in paragraph to align (30-50 chars)"),
+      startAnchor: z.string().describe("Text from the first paragraph to align (30-50 chars)"),
+      endAnchor: z.string().optional().describe("Text from the last paragraph to align, or leave empty for single paragraph"),
       alignment: z.enum(["left", "center", "right", "justify"]).describe("Alignment type")
     }),
     outputSchema: z.object({
@@ -238,6 +256,72 @@ export const tools = {
       fontSize: z.number().optional().describe("Font size in points"),
       color: z.string().optional().describe("Font color (hex, name, or RGB)"),
       highlightColor: z.string().optional().describe("Highlight color (yellow, green, blue, pink, etc.)")
+    }),
+    outputSchema: z.object({
+      success: z.boolean(),
+      message: z.string().optional(),
+      error: z.string().optional()
+    })
+  }),
+
+
+  "set_spacing": createFrontendTool({
+    id: "set_spacing",
+    description: "Set line spacing and paragraph spacing for one or more paragraphs",
+    inputSchema: z.object({
+      startAnchor: z.string().describe("Text from the first paragraph to format (30-50 chars)"),
+      endAnchor: z.string().optional().describe("Text from the last paragraph to format, or leave empty for single paragraph"),
+      lineSpacing: z.string().optional().describe("Line spacing: 'single', '1.5', 'double', or number"),
+      spaceBefore: z.number().optional().describe("Points of space before paragraphs"),
+      spaceAfter: z.number().optional().describe("Points of space after paragraphs")
+    }),
+    outputSchema: z.object({
+      success: z.boolean(),
+      message: z.string().optional(),
+      error: z.string().optional()
+    })
+  }),
+
+  "set_indentation": createFrontendTool({
+    id: "set_indentation",
+    description: "Set ABSOLUTE paragraph indentation values for one or more paragraphs (not relative adjustments)",
+    inputSchema: z.object({
+      startAnchor: z.string().describe("Text from the first paragraph to format (30-50 chars)"),
+      endAnchor: z.string().optional().describe("Text from the last paragraph to format, or leave empty for single paragraph"),
+      firstLine: z.number().optional().describe("ABSOLUTE first line indent in points from left margin (not relative change)"),
+      leftIndent: z.number().optional().describe("ABSOLUTE left margin position in points (e.g., 72 = 1 inch from edge)"),
+      rightIndent: z.number().optional().describe("ABSOLUTE right margin position in points from right edge"),
+      hanging: z.number().optional().describe("Create hanging indent (first line at margin, rest indented by this amount)")
+    }),
+    outputSchema: z.object({
+      success: z.boolean(),
+      message: z.string().optional(),
+      error: z.string().optional()
+    })
+  }),
+
+  "insert_footnote": createFrontendTool({
+    id: "insert_footnote",
+    description: "Insert a footnote or endnote at specific location",
+    inputSchema: z.object({
+      anchor: z.string().describe("Text where footnote reference goes (30-50 chars)"),
+      text: z.string().describe("The footnote/endnote text content"),
+      type: z.enum(["footnote", "endnote"]).default("footnote").describe("Type of note")
+    }),
+    outputSchema: z.object({
+      success: z.boolean(),
+      message: z.string().optional(),
+      error: z.string().optional()
+    })
+  }),
+
+  "insert_link": createFrontendTool({
+    id: "insert_link",
+    description: "Add hyperlink to selected text",
+    inputSchema: z.object({
+      anchor: z.string().describe("Text to make into link (30-50 chars)"),
+      url: z.string().describe("URL or email address to link to"),
+      tooltip: z.string().optional().describe("Tooltip text on hover")
     }),
     outputSchema: z.object({
       success: z.boolean(),

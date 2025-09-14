@@ -2,15 +2,21 @@ import { ToolDefinition, ToolParameter, ToolContext, ToolResult } from "../core/
 
 export class SetAlignmentTool implements ToolDefinition {
   name = "set_alignment";
-  description = "Set text alignment (left, center, right, justify) for a paragraph";
+  description = "Set text alignment for one or more paragraphs";
   category: ToolDefinition["category"] = "formatting";
   
   parameters: ToolParameter[] = [
     {
-      name: "anchor",
+      name: "startAnchor",
       type: "string",
-      description: "Text to find and align (30-50 characters from the paragraph)",
+      description: "Text from the first paragraph to align (30-50 characters)",
       required: true
+    },
+    {
+      name: "endAnchor",
+      type: "string",
+      description: "Text from the last paragraph to align, or leave empty for single paragraph",
+      required: false
     },
     {
       name: "alignment",
@@ -22,49 +28,86 @@ export class SetAlignmentTool implements ToolDefinition {
   ];
   
   async execute(params: any, _context?: ToolContext): Promise<ToolResult> {
-    const { anchor, alignment } = params;
+    const { startAnchor, endAnchor, alignment } = params;
     
-    if (!anchor || !alignment) {
+    if (!startAnchor || !alignment) {
       return {
         success: false,
-        error: "Both anchor and alignment are required"
+        error: "startAnchor and alignment are required"
       };
     }
     
     try {
       return await Word.run(async (context) => {
-        // Search for the anchor text
-        const searchResults = context.document.body.search(anchor, { matchCase: false });
-        context.load(searchResults);
+        // Get all paragraphs
+        const allParagraphs = context.document.body.paragraphs;
+        context.load(allParagraphs);
         await context.sync();
         
-        if (searchResults.items.length === 0) {
+        // Find start paragraph
+        let startIndex = -1;
+        let endIndex = -1;
+        
+        for (let i = 0; i < allParagraphs.items.length; i++) {
+          const para = allParagraphs.items[i];
+          context.load(para);
+          await context.sync();
+          
+          if (para.text.includes(startAnchor)) {
+            startIndex = i;
+            if (!endAnchor) {
+              endIndex = i; // Single paragraph
+            }
+            break;
+          }
+        }
+        
+        if (startIndex === -1) {
           return {
             success: false,
-            error: `Text not found: "${anchor}"`
+            error: `Start text not found: "${startAnchor}"`
           };
         }
         
-        const firstMatch = searchResults.items[0];
-        const paragraph = firstMatch.paragraphs.getFirst();
-        context.load(paragraph);
-        await context.sync();
+        // Find end paragraph if specified
+        if (endAnchor) {
+          for (let i = startIndex; i < allParagraphs.items.length; i++) {
+            const para = allParagraphs.items[i];
+            context.load(para);
+            await context.sync();
+            
+            if (para.text.includes(endAnchor)) {
+              endIndex = i;
+              break;
+            }
+          }
+          
+          if (endIndex === -1) {
+            return {
+              success: false,
+              error: `End text not found: "${endAnchor}"`
+            };
+          }
+        }
         
-        // Set alignment
+        // Apply alignment to all paragraphs in range
+        let paragraphCount = 0;
+        let alignmentValue: Word.Alignment;
+        
         switch (alignment.toLowerCase()) {
           case "left":
-            paragraph.alignment = Word.Alignment.left;
+            alignmentValue = Word.Alignment.left;
             break;
           case "center":
           case "centre":
-            paragraph.alignment = Word.Alignment.centered;
+            alignmentValue = Word.Alignment.centered;
             break;
           case "right":
-            paragraph.alignment = Word.Alignment.right;
+            alignmentValue = Word.Alignment.right;
             break;
           case "justify":
           case "justified":
-            paragraph.alignment = Word.Alignment.justified;
+            alignmentValue = Word.Alignment.justified;
             break;
           default:
             return {
@@ -73,11 +116,17 @@ export class SetAlignmentTool implements ToolDefinition {
             };
         }
         
+        for (let i = startIndex; i <= endIndex; i++) {
+          const paragraph = allParagraphs.items[i];
+          paragraph.alignment = alignmentValue;
+          paragraphCount++;
+        }
+        
         await context.sync();
         
         return {
           success: true,
-          message: `Set paragraph alignment to ${alignment}`
+          message: `Set ${alignment} alignment for ${paragraphCount} paragraph${paragraphCount > 1 ? 's' : ''}`
         };
       });
     } catch (error: any) {

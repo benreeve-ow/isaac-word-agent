@@ -25,17 +25,20 @@ Enable smart compression when context grows:
   - Document structure/outline
 - [ ] Drop redundant confirmations and old tool calls
 
-### 3. **Context Management** 
+### 3. **Context Management** ✅
 Keep context clean and leverage Anthropic's caching:
-- [ ] **Document Deduplication**: Remove old document versions from context
-- [ ] **Latest Document Section**: Maintain one canonical "current document" in context
-- [ ] **Large Document Handling**: 
-  - If document > 50k tokens: keep relevant section + document summary
-  - Track which section is "active" in working memory
-- [ ] **Prompt Caching Strategy** (for cost savings):
+- [x] **Document Deduplication**: Remove old document versions from context - **DONE!**
+  - Automatically detects redundant document reads
+  - Replaces old reads with lightweight markers
+  - Shows token savings in console logs
+- [x] **Latest Document Section**: Maintain one canonical "current document" in context - **DONE!**
+- [x] **Prompt Caching Strategy** (for cost savings): - **DONE!**
   - Structure prompts with stable prefix (system prompt, document)
   - Variable suffix (recent conversation, tool calls)
   - This enables Anthropic's prompt caching discount
+- [ ] **Large Document Handling**: 
+  - If document > 50k tokens: keep relevant section + document summary
+  - Track which section is "active" in working memory
 
 ### 4. **Parallel Tool Execution** (CRITICAL) ✅
 Claude ALREADY supports parallel tool calls natively! We need to:
@@ -61,24 +64,23 @@ Provide granular formatting control:
 - [x] **List Tools**:
   - [x] `create_list` - Convert text to bulleted/numbered list ✅
   - [x] Control bullet/numbering style (integrated in create_list) ✅
-  - [ ] `adjust_list_level` - Increase/decrease list indentation level
+  - [x] `adjust_list_level` - Increase/decrease list indentation level ✅
   
 - [x] **Advanced Text Formatting**:
   - [x] `set_font_properties` - Change font family, size, and color ✅
   - [x] Apply highlighting to text (integrated in set_font_properties) ✅
-  - [ ] `set_text_effects` - Small caps, all caps, hidden text, etc.
+  - [x] `set_text_effects` - Small caps, all caps, hidden text, etc. ✅
   
 - [x] **Paragraph Formatting**:
   - [x] `set_alignment` - Left, center, right, justify text alignment ✅
-  - [ ] `set_line_spacing` - Single, 1.5, double, custom spacing
-  - [ ] `set_indentation` - First line, hanging, left/right margins
-  - [ ] `set_paragraph_spacing` - Before/after paragraph spacing
+  - [x] `set_spacing` - Line spacing (single, 1.5, double) and paragraph spacing ✅
+  - [x] `set_indentation` - First line, hanging, left/right margins ✅
   
 - [x] **Document Structure**:
   - [x] `insert_break` - Page break, section break, column break ✅
   - [ ] `insert_formula` - Add properly formatted mathematical equations
-  - [ ] `insert_footnote` - Add footnote/endnote at current position
-  - [ ] `insert_link` - Add hyperlink to text
+  - [x] `insert_footnote` - Add footnote/endnote at current position ✅
+  - [x] `insert_link` - Add hyperlink to text ✅
   - [ ] `insert_cross_reference` - Reference to heading/figure/table
   - [ ] `update_field` - Update field codes (TOC, references, etc.)
   

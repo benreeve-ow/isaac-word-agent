@@ -18,10 +18,15 @@ import { ResolveCommentTool } from "./context/ResolveCommentTool";
 import { EditTableTool as ContextEditTableTool } from "./context/EditTableTool";
 
 // Import new formatting tools
-import { CreateListTool } from "./context/CreateListTool";
+import { CreateMultiItemListTool } from "./context/CreateMultiItemListTool";
 import { SetAlignmentTool } from "./context/SetAlignmentTool";
 import { InsertBreakTool } from "./context/InsertBreakTool";
 import { SetFontPropertiesTool } from "./context/SetFontPropertiesTool";
+import { SetSpacingTool } from "./context/SetSpacingTool";
+import { SetIndentationTool } from "./context/SetIndentationTool";
+import { InsertFootnoteTool } from "./context/InsertFootnoteTool";
+import { InsertLinkTool } from "./context/InsertLinkTool";
+import { AdjustListLevelTool } from "./context/AdjustListLevelTool";
 
 // All legacy tools have been removed - using only context-based tools
 
@@ -52,10 +57,15 @@ export function initializeTools(): void {
   registry.register(new ContextEditTableTool());
   
   // Register new formatting tools
-  registry.register(new CreateListTool());
+  registry.register(new CreateMultiItemListTool()); // This is now the only list tool
+  registry.register(new AdjustListLevelTool());
   registry.register(new SetAlignmentTool());
   registry.register(new InsertBreakTool());
   registry.register(new SetFontPropertiesTool());
+  registry.register(new SetSpacingTool());
+  registry.register(new SetIndentationTool());
+  registry.register(new InsertFootnoteTool());
+  registry.register(new InsertLinkTool());
   
   // Note: Planning tools were removed with legacy tools
   // All tool execution now happens through context-based tools

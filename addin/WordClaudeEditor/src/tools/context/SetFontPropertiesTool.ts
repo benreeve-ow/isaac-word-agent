@@ -96,8 +96,7 @@ export class SetFontPropertiesTool implements ToolDefinition {
         
         // Set highlight color
         if (highlightColor) {
-          const normalizedHighlight = this.normalizeHighlightColor(highlightColor);
-          font.highlightColor = normalizedHighlight;
+          font.highlightColor = this.normalizeHighlightColor(highlightColor);
           changes.push(`highlight: ${highlightColor}`);
         }
         
@@ -154,24 +153,27 @@ export class SetFontPropertiesTool implements ToolDefinition {
     return color.startsWith("#") ? color : `#${color}`;
   }
   
-  private normalizeHighlightColor(color: string): Word.HighlightColor | string {
+  private normalizeHighlightColor(color: string): string {
     const lowerColor = color.toLowerCase();
     
-    // Map common highlight colors to Word constants
+    // Map common highlight colors to hex values
     switch (lowerColor) {
       case "yellow":
-        return Word.HighlightColor.yellow;
+        return "#FFFF00";
       case "green":
-        return Word.HighlightColor.green;
+        return "#00FF00";
       case "blue":
-        return Word.HighlightColor.blue;
+        return "#00FFFF";
       case "pink":
-        return Word.HighlightColor.pink;
+        return "#FF69B4";
       case "orange":
         return "#FFA500";
+      case "gray":
+      case "grey":
+        return "#C0C0C0";
       case "none":
       case "clear":
-        return Word.HighlightColor.none;
+        return "";
       default:
         // Try to use as hex color
         return this.normalizeColor(color);

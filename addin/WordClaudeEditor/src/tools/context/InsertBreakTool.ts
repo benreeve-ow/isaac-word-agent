@@ -67,9 +67,15 @@ export class InsertBreakTool implements ToolDefinition {
           }
           
           const firstMatch = searchResults.items[0];
-          targetRange = position === "after" 
-            ? firstMatch.getRange(Word.RangeLocation.after)
-            : firstMatch.getRange(Word.RangeLocation.before);
+          if (position === "after") {
+            targetRange = firstMatch.getRange(Word.RangeLocation.after);
+          } else {
+            // For "before", we need to use the paragraph's start
+            const paragraph = firstMatch.paragraphs.getFirst();
+            context.load(paragraph);
+            await context.sync();
+            targetRange = paragraph.getRange(Word.RangeLocation.start);
+          }
         }
         
         context.load(targetRange);
@@ -94,7 +100,8 @@ export class InsertBreakTool implements ToolDefinition {
             breakTypeEnum = Word.BreakType.sectionOdd;
             break;
           case "column":
-            breakTypeEnum = Word.BreakType.columnBreak;
+            // Use line break for column (Word.js doesn't have column break)
+            breakTypeEnum = Word.BreakType.line;
             break;
           default:
             return {
