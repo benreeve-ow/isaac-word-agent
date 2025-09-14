@@ -50,18 +50,42 @@ Example: Instead of sequential calls, Claude can do:
 Turn 1: [insert_text(), replace_text(), delete_text()] → All results at once
 ```
 
-### 5. **Lower-Level Formatting Tools** (NEW)
+### 5. **Lower-Level Formatting Tools** 
 Provide granular formatting control:
-- [ ] `apply_style` - Apply a specific style to selection (bold, italic, underline, etc.)
-- [ ] `set_heading_level` - Set paragraph as Heading 1/2/3/etc or Normal
-- [ ] `create_list` - Convert selection to bullet/numbered list
-- [ ] `insert_footnote` - Add footnote at current position
-- [ ] `insert_link` - Add hyperlink to text
-- [ ] `insert_cross_reference` - Add reference to heading/figure/table
-- [ ] `update_field` - Update field codes (TOC, references, etc.)
-- [ ] `apply_paragraph_format` - Set alignment, spacing, indentation
-- [ ] `insert_page_break` - Add page/section breaks
-- [ ] `set_font` - Change font family/size for selection
+
+#### Currently Implemented ✅
+- [x] `apply_style` - Basic text formatting (bold, italic, underline, strikethrough, super/subscript)
+- [x] `apply_style` - Paragraph styles (Heading1-6, Normal, Title, Subtitle, Quote)
+
+#### Missing Formatting Capabilities (TODO)
+- [x] **List Tools**:
+  - [x] `create_list` - Convert text to bulleted/numbered list ✅
+  - [x] Control bullet/numbering style (integrated in create_list) ✅
+  - [ ] `adjust_list_level` - Increase/decrease list indentation level
+  
+- [x] **Advanced Text Formatting**:
+  - [x] `set_font_properties` - Change font family, size, and color ✅
+  - [x] Apply highlighting to text (integrated in set_font_properties) ✅
+  - [ ] `set_text_effects` - Small caps, all caps, hidden text, etc.
+  
+- [x] **Paragraph Formatting**:
+  - [x] `set_alignment` - Left, center, right, justify text alignment ✅
+  - [ ] `set_line_spacing` - Single, 1.5, double, custom spacing
+  - [ ] `set_indentation` - First line, hanging, left/right margins
+  - [ ] `set_paragraph_spacing` - Before/after paragraph spacing
+  
+- [x] **Document Structure**:
+  - [x] `insert_break` - Page break, section break, column break ✅
+  - [ ] `insert_formula` - Add properly formatted mathematical equations
+  - [ ] `insert_footnote` - Add footnote/endnote at current position
+  - [ ] `insert_link` - Add hyperlink to text
+  - [ ] `insert_cross_reference` - Reference to heading/figure/table
+  - [ ] `update_field` - Update field codes (TOC, references, etc.)
+  
+- [ ] **Table Formatting** (extend current tools):
+  - [ ] `format_table_cell` - Cell borders, shading, alignment
+  - [ ] `merge_table_cells` - Merge/split table cells
+  - [ ] `set_table_style` - Apply predefined table styles
 
 ### 6. **Document Structure Tools** (NEW)
 - [ ] `structure.toc` - Generate/update table of contents

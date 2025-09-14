@@ -17,6 +17,12 @@ import { AddCommentTool as ContextAddCommentTool } from "./context/AddCommentToo
 import { ResolveCommentTool } from "./context/ResolveCommentTool";
 import { EditTableTool as ContextEditTableTool } from "./context/EditTableTool";
 
+// Import new formatting tools
+import { CreateListTool } from "./context/CreateListTool";
+import { SetAlignmentTool } from "./context/SetAlignmentTool";
+import { InsertBreakTool } from "./context/InsertBreakTool";
+import { SetFontPropertiesTool } from "./context/SetFontPropertiesTool";
+
 // All legacy tools have been removed - using only context-based tools
 
 // Export core classes
@@ -44,6 +50,12 @@ export function initializeTools(): void {
   registry.register(new ContextAddCommentTool());
   registry.register(new ResolveCommentTool());
   registry.register(new ContextEditTableTool());
+  
+  // Register new formatting tools
+  registry.register(new CreateListTool());
+  registry.register(new SetAlignmentTool());
+  registry.register(new InsertBreakTool());
+  registry.register(new SetFontPropertiesTool());
   
   // Note: Planning tools were removed with legacy tools
   // All tool execution now happens through context-based tools

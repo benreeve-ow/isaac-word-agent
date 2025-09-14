@@ -182,6 +182,71 @@ export const tools = {
   }),
 
   // ==========================================
+  // ADDITIONAL FORMATTING TOOLS
+  // ==========================================
+  
+  "create_list": createFrontendTool({
+    id: "create_list",
+    description: "Convert text to a bulleted or numbered list with customizable style",
+    inputSchema: z.object({
+      anchor: z.string().describe("Text to convert to list (30-50 chars)"),
+      listType: z.enum(["bullet", "numbered"]).describe("Type of list"),
+      style: z.string().optional().describe("Bullet style (•, ◦, ▪) or numbering (1., a., i.)")
+    }),
+    outputSchema: z.object({
+      success: z.boolean(),
+      message: z.string().optional(),
+      error: z.string().optional()
+    })
+  }),
+
+  "set_alignment": createFrontendTool({
+    id: "set_alignment",
+    description: "Set paragraph alignment (left, center, right, justify)",
+    inputSchema: z.object({
+      anchor: z.string().describe("Text in paragraph to align (30-50 chars)"),
+      alignment: z.enum(["left", "center", "right", "justify"]).describe("Alignment type")
+    }),
+    outputSchema: z.object({
+      success: z.boolean(),
+      message: z.string().optional(),
+      error: z.string().optional()
+    })
+  }),
+
+  "insert_break": createFrontendTool({
+    id: "insert_break",
+    description: "Insert page break, section break, or column break",
+    inputSchema: z.object({
+      position: z.enum(["start", "end", "after", "before"]).describe("Where to insert"),
+      anchor: z.string().optional().describe("Text fragment for 'after'/'before' positions"),
+      breakType: z.enum(["page", "sectionNext", "sectionContinuous", "sectionEven", "sectionOdd", "column"]).describe("Type of break")
+    }),
+    outputSchema: z.object({
+      success: z.boolean(),
+      message: z.string().optional(),
+      error: z.string().optional()
+    })
+  }),
+
+  "set_font_properties": createFrontendTool({
+    id: "set_font_properties",
+    description: "Change font family, size, color, and highlighting",
+    inputSchema: z.object({
+      anchor: z.string().describe("Text to format (30-50 chars)"),
+      fontFamily: z.string().optional().describe("Font name (e.g., Arial, Times New Roman)"),
+      fontSize: z.number().optional().describe("Font size in points"),
+      color: z.string().optional().describe("Font color (hex, name, or RGB)"),
+      highlightColor: z.string().optional().describe("Highlight color (yellow, green, blue, pink, etc.)")
+    }),
+    outputSchema: z.object({
+      success: z.boolean(),
+      message: z.string().optional(),
+      error: z.string().optional()
+    })
+  }),
+
+  // ==========================================
   // SEARCH TOOLS
   // ==========================================
   

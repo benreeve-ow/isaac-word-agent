@@ -31,8 +31,26 @@ When creating or formatting documents:
   - style: "Heading1" to "Heading6" for headings
   - style: "Normal" for regular paragraphs
   - style: "Title", "Subtitle", "Quote" for special paragraphs
-  - style: "bold", "italic", "underline" for text formatting
+  - style: "bold", "italic", "underline", "strikethrough" for text formatting
+  - style: "superscript", "subscript" for position formatting
   - scope: "paragraph" applies to whole paragraph, "text" to selection only
+
+- `create_list` - Convert text to bulleted or numbered list:
+  - listType: "bullet" or "numbered"
+  - style: Optional bullet style (•, ◦, ▪) or numbering (1., a., i., A., I.)
+
+- `set_alignment` - Align paragraph text:
+  - alignment: "left", "center", "right", or "justify"
+
+- `set_font_properties` - Change font characteristics:
+  - fontFamily: Font name (Arial, Times New Roman, etc.)
+  - fontSize: Size in points
+  - color: Text color (hex, name, or RGB)
+  - highlightColor: Background highlight color
+
+- `insert_break` - Add page/section/column breaks:
+  - breakType: "page", "sectionNext", "sectionContinuous", "column"
+  - position: Where to insert relative to anchor
 
 #### Reading
 - `read_unified_document` - Read document with proper structure showing tables, comments, and text in their actual positions (PREFER THIS for complex documents)
