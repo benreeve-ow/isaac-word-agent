@@ -92,7 +92,7 @@ export class MastraStreamHandler {
       
       // Start streaming from Mastra
       const modelOutput = await this.agent.streamVNext(messages, {
-        maxSteps: options.maxSteps || 10
+        maxSteps: options.maxSteps || 100  // Allow up to 100 tool calls
       });
       
       // Send initial processing message

@@ -23,16 +23,14 @@ const WM_SCHEMA = z.object({
 });
 
 export const getMemory = () => {
-  // Get target tokens from env or use default
-  const targetTokens = parseInt(process.env.CONTEXT_INPUT_BUDGET_TOKENS || "160000") - 
-                      parseInt(process.env.CONTEXT_SAFETY_MARGIN || "5000");
+  // Set compression threshold at 120k tokens (75% of budget)
+  const targetTokens = 120000;
   
   return new Memory({
     storage: new LibSQLStore({ url: process.env.MEMORY_URL ?? "file:./memory.db" }),
-    // TODO: Re-enable compression once we fix the processor interface
-    // processors: [
-    //   new SummarizeTail({ targetTokens })
-    // ],
+    // Enable compression at 120k tokens
+    // Note: SummarizeTail needs to match Mastra's MemoryProcessor interface
+    // For now, keeping disabled until we can properly implement the interface
     processors: [],
     options: {
       workingMemory: {

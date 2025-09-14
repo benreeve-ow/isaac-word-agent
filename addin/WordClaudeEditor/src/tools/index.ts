@@ -6,6 +6,7 @@ import { ToolRegistry } from "./core/ToolRegistry";
 import { ToolExecutor } from "./core/ToolExecutor";
 
 // Import context-based tools (new simplified tools)
+import { ApplyStyleTool } from "./context/ApplyStyleTool";
 import { InsertTextTool } from "./context/InsertTextTool";
 import { ReplaceTextTool } from "./context/ReplaceTextTool";
 import { DeleteTextTool } from "./context/DeleteTextTool";
@@ -33,6 +34,7 @@ export function initializeTools(): void {
   registry.clear();
   
   // Register ONLY the new context-based tools that match the backend
+  registry.register(new ApplyStyleTool());
   registry.register(new InsertTextTool());
   registry.register(new ReplaceTextTool());
   registry.register(new DeleteTextTool());

@@ -8,6 +8,25 @@ import { z } from "zod";
 
 export const tools = {
   // ==========================================
+  // FORMATTING TOOLS
+  // ==========================================
+  
+  "apply_style": createFrontendTool({
+    id: "apply_style",
+    description: "Apply Word's native styles - Use for headings (Heading1-6), paragraph styles (Normal, Title, Quote), or text formatting (bold, italic). NOT for markdown formatting!",
+    inputSchema: z.object({
+      anchor: z.string().describe("Text to style (30-50 chars)"),
+      style: z.string().describe("Style: Heading1-6, Normal, Title, Subtitle, Quote, bold, italic, underline"),
+      scope: z.enum(["paragraph", "text"]).optional().describe("Apply to whole paragraph or just text")
+    }),
+    outputSchema: z.object({
+      success: z.boolean(),
+      message: z.string().optional(),
+      error: z.string().optional()
+    })
+  }),
+
+  // ==========================================
   // DOCUMENT READING TOOLS
   // ==========================================
   
