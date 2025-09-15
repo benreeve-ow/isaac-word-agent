@@ -119,7 +119,6 @@ export class InsertBreakTool implements ToolDefinition {
         };
       });
     } catch (error: any) {
-      console.error("[InsertBreakTool] Error:", error);
       return {
         success: false,
         error: error.message || "Failed to insert break"

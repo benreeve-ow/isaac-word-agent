@@ -220,7 +220,6 @@ export class InsertTableTool implements ToolDefinition {
         };
       });
     } catch (error: any) {
-      console.error("[InsertTableTool] Error:", error);
       return {
         success: false,
         error: error.message || "Failed to insert table"

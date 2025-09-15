@@ -130,7 +130,6 @@ export class SetAlignmentTool implements ToolDefinition {
         };
       });
     } catch (error: any) {
-      console.error("[SetAlignmentTool] Error:", error);
       return {
         success: false,
         error: error.message || "Failed to set alignment"

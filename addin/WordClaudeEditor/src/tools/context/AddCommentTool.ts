@@ -67,19 +67,16 @@ export class AddCommentTool implements ToolDefinition {
         context.load(searchResults);
         await context.sync();
         
-        console.log(`[AddCommentTool] Search results for "${normalizedAnchor}": ${searchResults.items.length} matches`);
         
         // If no results, try with just the first few words
         if (searchResults.items.length === 0) {
           // Try with just first 20 characters
           const shortAnchor = normalizedAnchor.substring(0, 20).trim();
-          console.log(`[AddCommentTool] Trying shorter anchor: "${shortAnchor}"`);
           
           searchResults = body.search(shortAnchor, { matchCase: false, matchWholeWord: false });
           context.load(searchResults);
           await context.sync();
           
-          console.log(`[AddCommentTool] Short search results: ${searchResults.items.length} matches`);
         }
         
         // If still no results, try getting all text to debug
@@ -87,7 +84,6 @@ export class AddCommentTool implements ToolDefinition {
           context.load(body, 'text');
           await context.sync();
           const bodyText = body.text.substring(0, 500);
-          console.log(`[AddCommentTool] Document starts with: "${bodyText}"`);
           
           return {
             success: false,
@@ -115,8 +111,6 @@ export class AddCommentTool implements ToolDefinition {
         };
       });
     } catch (error: any) {
-      console.error("[AddCommentTool] Error:", error);
-      
       // Handle common error when comments API is not available
       if (error.message && error.message.includes("insertComment")) {
         return {

@@ -64,8 +64,6 @@ export class ResolveCommentTool implements ToolDefinition {
         };
       });
     } catch (error: any) {
-      console.error("[ResolveCommentTool] Error:", error);
-      
       // Handle common error when comments API is not available
       if (error.message && error.message.includes("getComments")) {
         return {

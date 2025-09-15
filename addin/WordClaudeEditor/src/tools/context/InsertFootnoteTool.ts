@@ -74,7 +74,6 @@ export class InsertFootnoteTool implements ToolDefinition {
         };
       });
     } catch (error: any) {
-      console.error("[InsertFootnoteTool] Error:", error);
       return {
         success: false,
         error: error.message || "Failed to insert footnote"

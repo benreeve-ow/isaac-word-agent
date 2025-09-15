@@ -151,7 +151,6 @@ export class InsertTextTool implements ToolDefinition {
         };
       });
     } catch (error: any) {
-      console.error("[InsertTextTool] Error:", error);
       return {
         success: false,
         error: error.message || "Failed to insert text"

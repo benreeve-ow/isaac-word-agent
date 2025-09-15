@@ -162,7 +162,6 @@ export class SetIndentationTool implements ToolDefinition {
         };
       });
     } catch (error: any) {
-      console.error("[SetIndentationTool] Error:", error);
       return {
         success: false,
         error: error.message || "Failed to set indentation"

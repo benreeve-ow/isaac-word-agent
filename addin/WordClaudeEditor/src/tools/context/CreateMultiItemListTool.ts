@@ -199,7 +199,6 @@ export class CreateMultiItemListTool implements ToolDefinition {
         };
       });
     } catch (error: any) {
-      console.error("[CreateMultiItemListTool] Error:", error);
       return {
         success: false,
         error: error.message || "Failed to create list"

@@ -131,7 +131,6 @@ export class AdjustListLevelTool implements ToolDefinition {
                 adjustedCount++;
               } catch (e) {
                 failedCount++;
-                console.warn(`Failed to adjust level for item ${i}:`, e);
               }
             }
           } else {
@@ -140,7 +139,6 @@ export class AdjustListLevelTool implements ToolDefinition {
             await context.sync();
             
             if (paragraph.listItemOrNullObject.isNullObject) {
-              console.warn(`Paragraph at index ${i} is not a list item`);
               failedCount++;
             }
           }
@@ -164,7 +162,6 @@ export class AdjustListLevelTool implements ToolDefinition {
         };
       });
     } catch (error: any) {
-      console.error("[AdjustListLevelTool] Error:", error);
       return {
         success: false,
         error: error.message || "Failed to adjust list level"

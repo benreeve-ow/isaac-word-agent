@@ -72,7 +72,6 @@ export class InsertLinkTool implements ToolDefinition {
         };
       });
     } catch (error: any) {
-      console.error("[InsertLinkTool] Error:", error);
       return {
         success: false,
         error: error.message || "Failed to insert hyperlink"

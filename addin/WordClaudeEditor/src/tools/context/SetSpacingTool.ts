@@ -172,7 +172,6 @@ export class SetSpacingTool implements ToolDefinition {
         };
       });
     } catch (error: any) {
-      console.error("[SetSpacingTool] Error:", error);
       return {
         success: false,
         error: error.message || "Failed to set spacing"

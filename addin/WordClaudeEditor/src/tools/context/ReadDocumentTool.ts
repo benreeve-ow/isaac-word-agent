@@ -142,7 +142,7 @@ export class ReadDocumentTool implements ToolDefinition {
               content += "\n\n--- Comments ---\n" + commentTexts.join("\n");
             }
           } catch (error) {
-            console.warn("[ReadDocumentTool] Comments API not available:", error);
+            // Comments API not available
           }
         }
         
@@ -160,7 +160,6 @@ export class ReadDocumentTool implements ToolDefinition {
         };
       });
     } catch (error: any) {
-      console.error("[ReadDocumentTool] Error:", error);
       return {
         success: false,
         error: error.message || "Failed to read document"

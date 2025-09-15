@@ -108,7 +108,6 @@ export class SetFontPropertiesTool implements ToolDefinition {
         };
       });
     } catch (error: any) {
-      console.error("[SetFontPropertiesTool] Error:", error);
       return {
         success: false,
         error: error.message || "Failed to set font properties"

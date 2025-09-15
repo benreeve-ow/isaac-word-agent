@@ -89,7 +89,6 @@ export class DeleteTextTool implements ToolDefinition {
         };
       });
     } catch (error: any) {
-      console.error("[DeleteTextTool] Error:", error);
       return {
         success: false,
         error: error.message || "Failed to delete text"

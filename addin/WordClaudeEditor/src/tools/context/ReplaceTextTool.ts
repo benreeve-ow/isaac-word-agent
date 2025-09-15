@@ -100,7 +100,6 @@ export class ReplaceTextTool implements ToolDefinition {
         };
       });
     } catch (error: any) {
-      console.error("[ReplaceTextTool] Error:", error);
       return {
         success: false,
         error: error.message || "Failed to replace text"

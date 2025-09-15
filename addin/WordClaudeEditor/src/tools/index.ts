@@ -68,8 +68,6 @@ export function initializeTools(): void {
   registry.register(new InsertFootnoteTool());
   registry.register(new InsertLinkTool());
   
-  console.log(`[ToolSystem] Initialized ${registry.getAllTools().length} tools`);
-  console.log(`[ToolSystem] Categories: ${registry.getCategories().join(", ")}`);
 }
 
 /**

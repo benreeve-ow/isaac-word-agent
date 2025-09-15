@@ -186,7 +186,6 @@ export class ApplyStyleTool implements ToolDefinition {
         }
       });
     } catch (error: any) {
-      console.error("[ApplyStyleTool] Error:", error);
       return {
         success: false,
         error: error.message || "Failed to apply style"

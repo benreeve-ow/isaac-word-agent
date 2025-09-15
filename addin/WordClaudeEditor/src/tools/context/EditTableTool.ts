@@ -71,7 +71,6 @@ export class EditTableTool implements ToolDefinition {
         };
       });
     } catch (error: any) {
-      console.error("[EditTableTool] Error:", error);
       return {
         success: false,
         error: error.message || "Failed to edit table"

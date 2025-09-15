@@ -107,7 +107,7 @@ export class ReadUnifiedDocumentTool implements ToolDefinition {
               }
             }
           } catch (error) {
-            console.warn("[ReadUnifiedDocumentTool] Comments not available:", error);
+            // Comments not available
           }
         }
         
@@ -211,7 +211,6 @@ export class ReadUnifiedDocumentTool implements ToolDefinition {
         };
       });
     } catch (error: any) {
-      console.error("[ReadUnifiedDocumentTool] Error:", error);
       return {
         success: false,
         error: error.message || "Failed to read document"
