@@ -62,7 +62,7 @@
 ## 🐛 Known Issues
 
 ### Current Bugs
-- [x] First list item had extra indentation (fixed)
+- [] First list item had extra indentation (fixed but still a bit variable - need to use a cleaner approach)
 - [x] Console.log statements throughout codebase (cleaned)
 - [ ] Table styles limited by Word API availability
 - [ ] Formula detection works but cannot auto-convert to equation objects
