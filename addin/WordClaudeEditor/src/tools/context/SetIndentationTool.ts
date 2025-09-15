@@ -1,4 +1,5 @@
 import { ToolDefinition, ToolParameter, ToolContext, ToolResult } from "../core/ToolDefinition";
+import { enableTrackChanges } from "./trackChangesHelper";
 
 export class SetIndentationTool implements ToolDefinition {
   name = "set_indentation";
@@ -64,6 +65,7 @@ export class SetIndentationTool implements ToolDefinition {
     
     try {
       return await Word.run(async (context) => {
+        await enableTrackChanges(context);
         // Get all paragraphs
         const allParagraphs = context.document.body.paragraphs;
         context.load(allParagraphs);

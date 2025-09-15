@@ -1,4 +1,5 @@
 import { ToolDefinition, ToolParameter, ToolContext, ToolResult } from "../core/ToolDefinition";
+import { enableTrackChanges } from "./trackChangesHelper";
 
 export class CreateMultiItemListTool implements ToolDefinition {
   name = "create_list";
@@ -45,6 +46,7 @@ export class CreateMultiItemListTool implements ToolDefinition {
     
     try {
       return await Word.run(async (context) => {
+        await enableTrackChanges(context);
         // Find the starting paragraph
         const startSearch = context.document.body.search(startAnchor, { matchCase: false });
         context.load(startSearch);
@@ -171,6 +173,9 @@ export class CreateMultiItemListTool implements ToolDefinition {
         if (cleanedText !== allParagraphs.items[startIndex].text) {
           allParagraphs.items[startIndex].insertText(cleanedText, Word.InsertLocation.replace);
         }
+        
+        // Ensure consistent indentation for the first item
+        allParagraphs.items[startIndex].leftIndent = 0;
         
         // Add subsequent paragraphs to the same list
         let itemCount = 1;

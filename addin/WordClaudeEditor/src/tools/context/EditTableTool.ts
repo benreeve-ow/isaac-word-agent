@@ -1,4 +1,5 @@
 import { ToolDefinition, ToolParameter, ToolContext, ToolResult } from "../core/ToolDefinition";
+import { enableTrackChanges } from "./trackChangesHelper";
 
 export class EditTableTool implements ToolDefinition {
   name = "edit_table";
@@ -37,6 +38,7 @@ export class EditTableTool implements ToolDefinition {
     
     try {
       return await Word.run(async (context) => {
+        await enableTrackChanges(context);
         const tables = context.document.body.tables;
         context.load(tables);
         await context.sync();

@@ -1,4 +1,5 @@
 import { ToolDefinition, ToolParameter, ToolContext, ToolResult } from "../core/ToolDefinition";
+import { enableTrackChanges } from "./trackChangesHelper";
 
 export class ReplaceTextTool implements ToolDefinition {
   name = "replace_text";
@@ -54,6 +55,7 @@ export class ReplaceTextTool implements ToolDefinition {
     
     try {
       return await Word.run(async (context) => {
+        await enableTrackChanges(context);
         const body = context.document.body;
         
         // Normalize anchor text: remove line breaks and extra spaces

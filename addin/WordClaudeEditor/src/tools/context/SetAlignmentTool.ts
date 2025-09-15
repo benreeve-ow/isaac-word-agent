@@ -1,4 +1,5 @@
 import { ToolDefinition, ToolParameter, ToolContext, ToolResult } from "../core/ToolDefinition";
+import { enableTrackChanges } from "./trackChangesHelper";
 
 export class SetAlignmentTool implements ToolDefinition {
   name = "set_alignment";
@@ -39,6 +40,7 @@ export class SetAlignmentTool implements ToolDefinition {
     
     try {
       return await Word.run(async (context) => {
+        await enableTrackChanges(context);
         // Get all paragraphs
         const allParagraphs = context.document.body.paragraphs;
         context.load(allParagraphs);

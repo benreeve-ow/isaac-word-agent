@@ -1,4 +1,5 @@
 import { ToolDefinition, ToolParameter, ToolContext, ToolResult } from "../core/ToolDefinition";
+import { enableTrackChanges } from "./trackChangesHelper";
 
 export class SetFontPropertiesTool implements ToolDefinition {
   name = "set_font_properties";
@@ -57,6 +58,7 @@ export class SetFontPropertiesTool implements ToolDefinition {
     
     try {
       return await Word.run(async (context) => {
+        await enableTrackChanges(context);
         // Search for the anchor text
         const searchResults = context.document.body.search(anchor, { matchCase: false });
         context.load(searchResults);

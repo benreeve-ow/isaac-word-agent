@@ -1,4 +1,5 @@
 import { ToolDefinition, ToolParameter, ToolContext, ToolResult } from "../core/ToolDefinition";
+import { enableTrackChanges } from "./trackChangesHelper";
 
 export class InsertBreakTool implements ToolDefinition {
   name = "insert_break";
@@ -47,6 +48,7 @@ export class InsertBreakTool implements ToolDefinition {
     
     try {
       return await Word.run(async (context) => {
+        await enableTrackChanges(context);
         let targetRange: Word.Range;
         
         if (position === "start") {

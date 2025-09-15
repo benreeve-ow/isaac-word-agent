@@ -1,4 +1,5 @@
 import { ToolDefinition, ToolParameter, ToolContext, ToolResult } from "../core/ToolDefinition";
+import { enableTrackChanges } from "./trackChangesHelper";
 
 export class InsertTableTool implements ToolDefinition {
   name = "insert_table";
@@ -114,6 +115,7 @@ export class InsertTableTool implements ToolDefinition {
     
     try {
       return await Word.run(async (context) => {
+        await enableTrackChanges(context);
         const body = context.document.body;
         let insertionPoint: Word.Range | null = null;
         

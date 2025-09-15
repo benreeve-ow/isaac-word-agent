@@ -28,6 +28,7 @@ import { SetIndentationTool } from "./context/SetIndentationTool";
 import { InsertFootnoteTool } from "./context/InsertFootnoteTool";
 import { InsertLinkTool } from "./context/InsertLinkTool";
 import { AdjustListLevelTool } from "./context/AdjustListLevelTool";
+import { DetectAndConvertTableTool } from "./context/DetectAndConvertTableTool";
 
 // All legacy tools have been removed - using only context-based tools
 
@@ -67,6 +68,7 @@ export function initializeTools(): void {
   registry.register(new SetIndentationTool());
   registry.register(new InsertFootnoteTool());
   registry.register(new InsertLinkTool());
+  registry.register(new DetectAndConvertTableTool());
   
 }
 

@@ -1,4 +1,5 @@
 import { ToolDefinition, ToolParameter, ToolContext, ToolResult } from "../core/ToolDefinition";
+import { enableTrackChanges } from "./trackChangesHelper";
 
 export class InsertLinkTool implements ToolDefinition {
   name = "insert_link";
@@ -38,6 +39,7 @@ export class InsertLinkTool implements ToolDefinition {
     
     try {
       return await Word.run(async (context) => {
+        await enableTrackChanges(context);
         // Search for the anchor text
         const searchResults = context.document.body.search(anchor, { matchCase: false });
         context.load(searchResults);

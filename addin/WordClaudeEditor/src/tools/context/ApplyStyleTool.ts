@@ -1,4 +1,5 @@
 import { ToolDefinition, ToolParameter, ToolContext, ToolResult } from "../core/ToolDefinition";
+import { enableTrackChanges } from "./trackChangesHelper";
 
 export class ApplyStyleTool implements ToolDefinition {
   name = "apply_style";
@@ -39,6 +40,7 @@ export class ApplyStyleTool implements ToolDefinition {
     
     try {
       return await Word.run(async (context) => {
+        await enableTrackChanges(context);
         // Search for the anchor text
         const searchResults = context.document.body.search(anchor, { matchCase: false });
         context.load(searchResults);

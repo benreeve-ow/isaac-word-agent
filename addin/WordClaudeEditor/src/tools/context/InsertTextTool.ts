@@ -1,5 +1,6 @@
 import { ToolDefinition, ToolParameter, ToolContext, ToolResult } from "../core/ToolDefinition";
 import { InsertTextParams, ParamValidator, ToolExecutionResult } from "../core/types";
+import { enableTrackChanges } from "./trackChangesHelper";
 
 /**
  * Tool for inserting text at specific positions in a Word document.
@@ -78,6 +79,7 @@ export class InsertTextTool implements ToolDefinition {
     
     try {
       return await Word.run(async (context) => {
+        await enableTrackChanges(context);
         const body = context.document.body;
         let insertionPoint: Word.Range | null = null;
         

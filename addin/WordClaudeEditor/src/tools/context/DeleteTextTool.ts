@@ -1,4 +1,5 @@
 import { ToolDefinition, ToolParameter, ToolContext, ToolResult } from "../core/ToolDefinition";
+import { enableTrackChanges } from "./trackChangesHelper";
 
 export class DeleteTextTool implements ToolDefinition {
   name = "delete_text";
@@ -44,6 +45,7 @@ export class DeleteTextTool implements ToolDefinition {
     
     try {
       return await Word.run(async (context) => {
+        await enableTrackChanges(context);
         const body = context.document.body;
         
         // Normalize anchor text: remove line breaks and extra spaces

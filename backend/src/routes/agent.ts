@@ -126,7 +126,7 @@ router.post("/stream", checkAuth, async (req: Request, res: Response) => {
     
     // Stream the agent response with frontend tool handling
     await streamHandler.stream(messages, {
-      maxSteps: 10,
+      maxSteps: 100,  // Allow up to 100 tool calls for complex operations
       sessionId
     });
     

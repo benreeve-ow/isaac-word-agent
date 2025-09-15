@@ -1,4 +1,5 @@
 import { ToolDefinition, ToolParameter, ToolContext, ToolResult } from "../core/ToolDefinition";
+import { enableTrackChanges } from "./trackChangesHelper";
 
 export class ResolveCommentTool implements ToolDefinition {
   name = "resolve_comment";
@@ -25,6 +26,7 @@ export class ResolveCommentTool implements ToolDefinition {
     
     try {
       return await Word.run(async (context) => {
+        await enableTrackChanges(context);
         // Get all comments
         const comments = context.document.body.getComments();
         context.load(comments);
